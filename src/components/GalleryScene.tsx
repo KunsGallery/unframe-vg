@@ -2,31 +2,54 @@
 
 import { Canvas } from "@react-three/fiber"
 import { Suspense } from "react"
-import PlayerControls from "./PlayerControls"
+
 import GalleryModel from "./GalleryModel"
+import PlayerControls, { mobileDirection } from "./PlayerControls"
+import MobileJoystick from "./MobileJoystick"
+import WallDebug from "@/components/WallDebug"
+import ArtworkPanel from "@/components/ArtworkPanel"
+import AimUI from "@/components/AimUI"
 
 export default function GalleryScene() {
 
   return (
-    <Canvas
-      camera={{ position: [0, 1.6, 4], fov: 55 }}
-      dpr={[1, 1.5]}
-    >
+    <>
+      <Canvas
+        camera={{ position: [0, 1.6, 4], fov: 55 }}
+        dpr={[1, 1.5]}
+      >
 
-      <ambientLight intensity={0.8} />
+        <ambientLight intensity={0.8} />
 
-      <directionalLight
-        position={[5,10,5]}
-        intensity={1}
+        <directionalLight
+          position={[5, 10, 5]}
+          intensity={1}
+        />
+
+        <Suspense fallback={null}>
+
+          <GalleryModel />
+
+          {/* 벽 디버그 */}
+          <WallDebug />
+
+        </Suspense>
+
+        <PlayerControls />
+
+      </Canvas>
+
+      <MobileJoystick
+        onMove={(dir: any) => {
+          mobileDirection.x = dir.x
+          mobileDirection.z = dir.z
+        }}
       />
+      <AimUI />
 
-      <Suspense fallback={null}>
-        <GalleryModel />
-      </Suspense>
+      <ArtworkPanel />
 
-      <PlayerControls />
-
-    </Canvas>
+    </>
   )
 
 }

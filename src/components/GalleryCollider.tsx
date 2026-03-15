@@ -1,31 +1,34 @@
 "use client"
 
 import { useGLTF } from "@react-three/drei"
-import { useEffect } from "react"
-import * as THREE from "three"
+import { useMemo } from "react"
 
 export default function GalleryCollider() {
 
   const { scene } = useGLTF("/models/gallery.glb")
 
-  useEffect(() => {
+  const colliders = useMemo(() => {
+
+    const meshes: any[] = []
 
     scene.traverse((child: any) => {
 
-      if (child.isMesh) {
+      if (!child.isMesh) return
 
-        child.material = new THREE.MeshBasicMaterial({
-          visible: false
-        })
-
-        child.geometry.computeBoundingBox()
-
+      if (
+        child.parent?.name === "Wall" ||
+        child.parent?.name === "Walls" ||
+        child.parent?.name === "Cylinder"
+      ) {
+        meshes.push(child)
       }
 
     })
 
+    return meshes
+
   }, [scene])
 
-  return <primitive object={scene} />
+  return <primitive object={scene} visible={false} />
 
 }
