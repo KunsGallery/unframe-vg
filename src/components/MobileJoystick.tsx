@@ -8,34 +8,42 @@ export default function MobileJoystick({ onMove }: any) {
 
   useEffect(() => {
 
+    if (!joystickRef.current) return
+
+    let manager: any
+
     import("nipplejs").then((nipplejs) => {
 
-      const manager = nipplejs.default.create({
+      manager = nipplejs.default.create({
         zone: joystickRef.current!,
         mode: "static",
         position: { left: "80px", bottom: "80px" },
         color: "white"
       })
 
-      manager.on("move", (evt: any, data: any) => {
+      manager.on("move", (_: any, data: any) => {
 
         const angle = data.angle.radian
         const force = data.force
 
-        const x = Math.cos(angle) * force
-        const z = Math.sin(angle) * force
-
-        onMove({ x, z })
+        onMove({
+          x: Math.cos(angle) * force,
+          z: Math.sin(angle) * force
+        })
 
       })
 
       manager.on("end", () => {
 
-        onMove({ x:0, z:0 })
+        onMove({ x: 0, z: 0 })
 
       })
 
     })
+
+    return () => {
+      if (manager) manager.destroy()
+    }
 
   }, [])
 
@@ -44,11 +52,10 @@ export default function MobileJoystick({ onMove }: any) {
       ref={joystickRef}
       style={{
         position: "absolute",
-        bottom: 0,
         left: 0,
-        width: "200px",
-        height: "200px",
-        zIndex: 10
+        bottom: 0,
+        width: 160,
+        height: 160
       }}
     />
   )

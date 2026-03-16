@@ -39,10 +39,10 @@ export default function PlayerControls() {
     const speed = 0.05
 
     // desktop controls
-    if (keys.current["KeyW"]) controls.current.moveForward(speed)
-    if (keys.current["KeyS"]) controls.current.moveForward(-speed)
-    if (keys.current["KeyA"]) controls.current.moveRight(-speed)
-    if (keys.current["KeyD"]) controls.current.moveRight(speed)
+    if (keys.current["KeyI"]) controls.current.moveForward(speed)
+    if (keys.current["KeyK"]) controls.current.moveForward(-speed)
+    if (keys.current["KeyJ"]) controls.current.moveRight(-speed)
+    if (keys.current["KeyL"]) controls.current.moveRight(speed)
 
     // mobile joystick controls
     if (mobileDirection.z !== 0) {
