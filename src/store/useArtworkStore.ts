@@ -11,12 +11,18 @@ type Artwork = {
 
 type State = {
   selected: Artwork | null
+  lastClosedAt: number
   open: (a: Artwork) => void
   close: () => void
 }
 
 export const useArtworkStore = create<State>((set) => ({
   selected: null,
+  lastClosedAt: 0,
   open: (a) => set({ selected: a }),
-  close: () => set({ selected: null })
+  close: () =>
+    set({
+      selected: null,
+      lastClosedAt: Date.now(),
+    }),
 }))
