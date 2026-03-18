@@ -1,10 +1,24 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { useArtworkStore } from "@/store/useArtworkStore"
 
 export default function ArtworkPanel() {
   const { selected, close } = useArtworkStore()
+
+  const isTouchDevice = useMemo(() => {
+    if (typeof window === "undefined") return false
+    return (
+      "ontouchstart" in window ||
+      navigator.maxTouchPoints > 0 ||
+      window.matchMedia("(pointer: coarse)").matches
+    )
+  }, [])
+
+  const isLandscape = useMemo(() => {
+    if (typeof window === "undefined") return true
+    return window.innerWidth > window.innerHeight
+  }, [])
 
   useEffect(() => {
     if (!selected) return
@@ -27,6 +41,59 @@ export default function ArtworkPanel() {
   }, [selected, close])
 
   if (!selected) return null
+
+  const useMobilePanel = isTouchDevice && isLandscape
+
+  if (useMobilePanel) {
+    return (
+      <div
+        style={mobileOverlayStyle}
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={close}
+      >
+        <aside
+          style={mobilePanelStyle}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div style={mobilePanelHeaderStyle}>
+            <div>
+              <p style={mobileEyebrowStyle}>Artwork</p>
+              <h2 style={mobileTitleStyle}>{selected.title || "Untitled"}</h2>
+              <p style={mobileArtistStyle}>{selected.artist || "Unknown Artist"}</p>
+            </div>
+
+            <button type="button" onClick={close} style={mobileCloseButtonStyle}>
+              ✕
+            </button>
+          </div>
+
+          <div style={mobileImageWrapStyle}>
+            <img
+              src={selected.imageUrl}
+              alt={selected.title || "artwork"}
+              style={mobileImageStyle}
+            />
+          </div>
+
+          <div style={mobileInfoListStyle}>
+            <InfoRow label="Size" value={`${Math.round(selected.width_cm)} × ${Math.round(selected.height_cm)} cm`} />
+            <InfoRow label="Medium" value="Digital image preview" />
+            <InfoRow label="Context" value="Installed in virtual gallery" />
+          </div>
+
+          <div style={mobileButtonRowStyle}>
+            <button type="button" onClick={close} style={mobileSecondaryButtonStyle}>
+              닫기
+            </button>
+            <button type="button" style={mobilePrimaryButtonStyle}>
+              문의 연결 예정
+            </button>
+          </div>
+        </aside>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -100,6 +167,157 @@ function SpecItem({
       <strong style={specValueStyle}>{value}</strong>
     </div>
   )
+}
+
+function InfoRow({
+  label,
+  value,
+}: {
+  label: string
+  value: string
+}) {
+  return (
+    <div style={mobileInfoRowStyle}>
+      <span style={mobileInfoLabelStyle}>{label}</span>
+      <span style={mobileInfoValueStyle}>{value}</span>
+    </div>
+  )
+}
+
+const mobileOverlayStyle: React.CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 9999,
+  background: "rgba(4,6,10,0.28)",
+  backdropFilter: "blur(4px)",
+}
+
+const mobilePanelStyle: React.CSSProperties = {
+  position: "absolute",
+  top: 0,
+  right: 0,
+  width: "min(420px, 58vw)",
+  height: "100dvh",
+  background:
+    "linear-gradient(180deg, rgba(17,20,26,0.98) 0%, rgba(10,12,17,0.98) 100%)",
+  borderLeft: "1px solid rgba(255,255,255,0.08)",
+  boxShadow: "-20px 0 50px rgba(0,0,0,0.28)",
+  display: "grid",
+  gridTemplateRows: "auto auto auto auto",
+  gap: 14,
+  padding: "18px 16px 16px",
+  overflowY: "auto",
+}
+
+const mobilePanelHeaderStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  gap: 12,
+  alignItems: "start",
+}
+
+const mobileEyebrowStyle: React.CSSProperties = {
+  margin: 0,
+  fontSize: 11,
+  letterSpacing: "0.12em",
+  textTransform: "uppercase",
+  color: "rgba(255,255,255,0.42)",
+}
+
+const mobileTitleStyle: React.CSSProperties = {
+  margin: "6px 0 4px",
+  fontSize: 24,
+  lineHeight: 1.04,
+  color: "#f7f3ed",
+}
+
+const mobileArtistStyle: React.CSSProperties = {
+  margin: 0,
+  fontSize: 14,
+  color: "rgba(255,255,255,0.7)",
+}
+
+const mobileCloseButtonStyle: React.CSSProperties = {
+  width: 44,
+  height: 44,
+  borderRadius: 14,
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "rgba(255,255,255,0.05)",
+  color: "#f5f7fb",
+  fontSize: 16,
+  cursor: "pointer",
+  flexShrink: 0,
+}
+
+const mobileImageWrapStyle: React.CSSProperties = {
+  width: "100%",
+  borderRadius: 20,
+  overflow: "hidden",
+  background: "rgba(255,255,255,0.03)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  padding: 10,
+}
+
+const mobileImageStyle: React.CSSProperties = {
+  width: "100%",
+  maxHeight: "42dvh",
+  objectFit: "contain",
+  display: "block",
+  borderRadius: 14,
+}
+
+const mobileInfoListStyle: React.CSSProperties = {
+  display: "grid",
+  gap: 10,
+}
+
+const mobileInfoRowStyle: React.CSSProperties = {
+  display: "grid",
+  gap: 4,
+  padding: "12px 12px 13px",
+  borderRadius: 16,
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(255,255,255,0.06)",
+}
+
+const mobileInfoLabelStyle: React.CSSProperties = {
+  fontSize: 11,
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+  color: "rgba(255,255,255,0.42)",
+}
+
+const mobileInfoValueStyle: React.CSSProperties = {
+  fontSize: 14,
+  lineHeight: 1.45,
+  color: "#f7f3ed",
+}
+
+const mobileButtonRowStyle: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gap: 10,
+}
+
+const mobileSecondaryButtonStyle: React.CSSProperties = {
+  minHeight: 48,
+  borderRadius: 16,
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "rgba(255,255,255,0.04)",
+  color: "#f5f7fb",
+  fontSize: 14,
+  cursor: "pointer",
+}
+
+const mobilePrimaryButtonStyle: React.CSSProperties = {
+  minHeight: 48,
+  borderRadius: 16,
+  border: "none",
+  background: "linear-gradient(135deg, #f5f1ea 0%, #ddd0bd 100%)",
+  color: "#12161d",
+  fontSize: 14,
+  fontWeight: 700,
+  cursor: "pointer",
 }
 
 const overlayStyle: React.CSSProperties = {
