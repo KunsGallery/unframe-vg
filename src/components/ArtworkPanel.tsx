@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useArtworkStore } from "@/store/useArtworkStore"
 
 export default function ArtworkPanel() {
   const { selected, close } = useArtworkStore()
+  const [isLandscape, setIsLandscape] = useState(true)
 
   const isTouchDevice = useMemo(() => {
     if (typeof window === "undefined") return false
@@ -15,9 +16,20 @@ export default function ArtworkPanel() {
     )
   }, [])
 
-  const isLandscape = useMemo(() => {
-    if (typeof window === "undefined") return true
-    return window.innerWidth > window.innerHeight
+  useEffect(() => {
+    function updateOrientation() {
+      if (typeof window === "undefined") return
+      setIsLandscape(window.innerWidth > window.innerHeight)
+    }
+
+    updateOrientation()
+    window.addEventListener("resize", updateOrientation)
+    window.addEventListener("orientationchange", updateOrientation)
+
+    return () => {
+      window.removeEventListener("resize", updateOrientation)
+      window.removeEventListener("orientationchange", updateOrientation)
+    }
   }, [])
 
   useEffect(() => {
@@ -57,7 +69,7 @@ export default function ArtworkPanel() {
           onClick={(e) => e.stopPropagation()}
         >
           <div style={mobilePanelHeaderStyle}>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <p style={mobileEyebrowStyle}>Artwork</p>
               <h2 style={mobileTitleStyle}>{selected.title || "Untitled"}</h2>
               <p style={mobileArtistStyle}>{selected.artist || "Unknown Artist"}</p>
@@ -77,10 +89,20 @@ export default function ArtworkPanel() {
           </div>
 
           <div style={mobileInfoListStyle}>
-            <InfoRow label="Size" value={`${Math.round(selected.width_cm)} × ${Math.round(selected.height_cm)} cm`} />
+            <InfoRow
+              label="Size"
+              value={`${Math.round(selected.width_cm)} × ${Math.round(
+                selected.height_cm
+              )} cm`}
+            />
             <InfoRow label="Medium" value="Digital image preview" />
             <InfoRow label="Context" value="Installed in virtual gallery" />
           </div>
+
+          <p style={mobileBodyTextStyle}>
+            작품 정보를 모바일 가로 관람에 맞게 간결하게 정리했습니다. 이후 단계에서는
+            작가 노트, 가격, 문의 연결까지 자연스럽게 확장할 수 있습니다.
+          </p>
 
           <div style={mobileButtonRowStyle}>
             <button type="button" onClick={close} style={mobileSecondaryButtonStyle}>
@@ -128,7 +150,9 @@ export default function ArtworkPanel() {
           <div style={specGridStyle}>
             <SpecItem
               label="Size"
-              value={`${Math.round(selected.width_cm)} × ${Math.round(selected.height_cm)} cm`}
+              value={`${Math.round(selected.width_cm)} × ${Math.round(
+                selected.height_cm
+              )} cm`}
             />
             <SpecItem label="Medium" value="Digital image preview" />
             <SpecItem label="Context" value="Installed in virtual gallery" />
@@ -188,134 +212,146 @@ const mobileOverlayStyle: React.CSSProperties = {
   position: "fixed",
   inset: 0,
   zIndex: 9999,
-  background: "rgba(4,6,10,0.28)",
-  backdropFilter: "blur(4px)",
+  background: "rgba(4,6,10,0.24)",
+  backdropFilter: "blur(3px)",
 }
 
 const mobilePanelStyle: React.CSSProperties = {
   position: "absolute",
   top: 0,
   right: 0,
-  width: "min(420px, 58vw)",
+  width: "min(370px, 52vw)",
   height: "100dvh",
   background:
     "linear-gradient(180deg, rgba(17,20,26,0.98) 0%, rgba(10,12,17,0.98) 100%)",
   borderLeft: "1px solid rgba(255,255,255,0.08)",
-  boxShadow: "-20px 0 50px rgba(0,0,0,0.28)",
+  boxShadow: "-16px 0 44px rgba(0,0,0,0.24)",
   display: "grid",
-  gridTemplateRows: "auto auto auto auto",
-  gap: 14,
-  padding: "18px 16px 16px",
+  alignContent: "start",
+  gap: 10,
+  padding: "14px 12px 14px",
   overflowY: "auto",
 }
 
 const mobilePanelHeaderStyle: React.CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
-  gap: 12,
+  gap: 10,
   alignItems: "start",
 }
 
 const mobileEyebrowStyle: React.CSSProperties = {
   margin: 0,
-  fontSize: 11,
+  fontSize: 10,
   letterSpacing: "0.12em",
   textTransform: "uppercase",
   color: "rgba(255,255,255,0.42)",
 }
 
 const mobileTitleStyle: React.CSSProperties = {
-  margin: "6px 0 4px",
-  fontSize: 24,
+  margin: "5px 0 3px",
+  fontSize: 20,
   lineHeight: 1.04,
   color: "#f7f3ed",
+  wordBreak: "break-word",
 }
 
 const mobileArtistStyle: React.CSSProperties = {
   margin: 0,
-  fontSize: 14,
+  fontSize: 12,
   color: "rgba(255,255,255,0.7)",
 }
 
 const mobileCloseButtonStyle: React.CSSProperties = {
-  width: 44,
-  height: 44,
-  borderRadius: 14,
+  width: 40,
+  height: 40,
+  borderRadius: 12,
   border: "1px solid rgba(255,255,255,0.12)",
   background: "rgba(255,255,255,0.05)",
   color: "#f5f7fb",
-  fontSize: 16,
+  fontSize: 15,
   cursor: "pointer",
   flexShrink: 0,
 }
 
 const mobileImageWrapStyle: React.CSSProperties = {
   width: "100%",
-  borderRadius: 20,
+  borderRadius: 16,
   overflow: "hidden",
   background: "rgba(255,255,255,0.03)",
   border: "1px solid rgba(255,255,255,0.06)",
-  padding: 10,
+  padding: 8,
 }
 
 const mobileImageStyle: React.CSSProperties = {
   width: "100%",
-  maxHeight: "42dvh",
+  maxHeight: "28dvh",
   objectFit: "contain",
   display: "block",
-  borderRadius: 14,
+  borderRadius: 12,
 }
 
 const mobileInfoListStyle: React.CSSProperties = {
   display: "grid",
-  gap: 10,
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gap: 8,
 }
 
 const mobileInfoRowStyle: React.CSSProperties = {
   display: "grid",
   gap: 4,
-  padding: "12px 12px 13px",
-  borderRadius: 16,
+  padding: "10px 10px 11px",
+  borderRadius: 14,
   background: "rgba(255,255,255,0.04)",
   border: "1px solid rgba(255,255,255,0.06)",
+  minHeight: 72,
 }
 
 const mobileInfoLabelStyle: React.CSSProperties = {
-  fontSize: 11,
+  fontSize: 10,
   letterSpacing: "0.08em",
   textTransform: "uppercase",
   color: "rgba(255,255,255,0.42)",
 }
 
 const mobileInfoValueStyle: React.CSSProperties = {
-  fontSize: 14,
-  lineHeight: 1.45,
+  fontSize: 12,
+  lineHeight: 1.4,
   color: "#f7f3ed",
+  wordBreak: "break-word",
+}
+
+const mobileBodyTextStyle: React.CSSProperties = {
+  margin: 0,
+  fontSize: 12,
+  lineHeight: 1.65,
+  color: "rgba(255,255,255,0.62)",
 }
 
 const mobileButtonRowStyle: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns: "1fr 1fr",
-  gap: 10,
+  gap: 8,
+  marginTop: 2,
 }
 
 const mobileSecondaryButtonStyle: React.CSSProperties = {
-  minHeight: 48,
-  borderRadius: 16,
+  minHeight: 44,
+  borderRadius: 14,
   border: "1px solid rgba(255,255,255,0.12)",
   background: "rgba(255,255,255,0.04)",
   color: "#f5f7fb",
-  fontSize: 14,
+  fontSize: 13,
   cursor: "pointer",
 }
 
 const mobilePrimaryButtonStyle: React.CSSProperties = {
-  minHeight: 48,
-  borderRadius: 16,
+  minHeight: 44,
+  borderRadius: 14,
   border: "none",
   background: "linear-gradient(135deg, #f5f1ea 0%, #ddd0bd 100%)",
   color: "#12161d",
-  fontSize: 14,
+  fontSize: 13,
   fontWeight: 700,
   cursor: "pointer",
 }
