@@ -9,6 +9,7 @@ import GalleryModel from "./GalleryModel"
 import PlayerControls, { mobileDirection } from "./PlayerControls"
 import MobileJoystick from "./MobileJoystick"
 import MobileLookPad from "./MobileLookPad"
+import MobileOrientationGate from "./MobileOrientationGate"
 import WallDebug from "@/components/WallDebug"
 import ArtworkPanel from "@/components/ArtworkPanel"
 import AimUI from "@/components/AimUI"
@@ -109,6 +110,7 @@ export default function GalleryScene() {
 
       <AimUI />
       <ArtworkPanel />
+      <MobileOrientationGate />
     </>
   )
 }
