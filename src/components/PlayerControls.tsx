@@ -52,9 +52,9 @@ export default function PlayerControls() {
   const pitchRef = useRef(0)
 
   useEffect(() => {
+    camera.rotation.order = "YXZ"
     yawRef.current = camera.rotation.y
     pitchRef.current = camera.rotation.x
-    camera.rotation.order = "YXZ"
   }, [camera])
 
   useEffect(() => {
@@ -78,28 +78,15 @@ export default function PlayerControls() {
   useFrame(() => {
     if (selected) return
 
-    const speed = 0.05
-
-    let moveForward = 0
-    let moveRight = 0
-
-    if (keys.current["KeyI"]) moveForward += speed
-    if (keys.current["KeyK"]) moveForward -= speed
-    if (keys.current["KeyL"]) moveRight += speed
-    if (keys.current["KeyJ"]) moveRight -= speed
-
-    if (mobileDirection.z !== 0) moveForward += mobileDirection.z * speed
-    if (mobileDirection.x !== 0) moveRight += mobileDirection.x * speed
-
     if (isTouchDevice) {
-      const lookSensitivity = 0.0032
+      const lookSensitivity = 0.045
 
       if (mobileLook.x !== 0 || mobileLook.y !== 0) {
         yawRef.current -= mobileLook.x * lookSensitivity
         pitchRef.current -= mobileLook.y * lookSensitivity
 
-        const maxPitch = Math.PI / 2.3
-        const minPitch = -Math.PI / 2.3
+        const maxPitch = Math.PI / 2.35
+        const minPitch = -Math.PI / 2.35
 
         if (pitchRef.current > maxPitch) pitchRef.current = maxPitch
         if (pitchRef.current < minPitch) pitchRef.current = minPitch
@@ -107,11 +94,20 @@ export default function PlayerControls() {
         camera.rotation.order = "YXZ"
         camera.rotation.y = yawRef.current
         camera.rotation.x = pitchRef.current
-
-        mobileLook.x = 0
-        mobileLook.y = 0
       }
     }
+
+    const speed = 0.05
+    let moveForward = 0
+    let moveRight = 0
+
+    if (keys.current["KeyW"]) moveForward += speed
+    if (keys.current["KeyS"]) moveForward -= speed
+    if (keys.current["KeyD"]) moveRight += speed
+    if (keys.current["KeyA"]) moveRight -= speed
+
+    if (mobileDirection.z !== 0) moveForward += mobileDirection.z * speed
+    if (mobileDirection.x !== 0) moveRight += mobileDirection.x * speed
 
     if (moveForward === 0 && moveRight === 0) return
 
@@ -124,7 +120,10 @@ export default function PlayerControls() {
     right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize()
 
     const current = camera.position.clone()
-    const moveVector = forward.multiplyScalar(moveForward).add(right.multiplyScalar(moveRight))
+    const moveVector = forward
+      .clone()
+      .multiplyScalar(moveForward)
+      .add(right.clone().multiplyScalar(moveRight))
 
     const tryX = current.clone()
     tryX.x += moveVector.x

@@ -8,7 +8,7 @@ import * as THREE from "three"
 import GalleryModel from "./GalleryModel"
 import PlayerControls, { mobileDirection } from "./PlayerControls"
 import MobileJoystick from "./MobileJoystick"
-import MobileLookPad from "./MobileLookPad"
+import MobileLookJoystick from "./MobileLookJoystick"
 import MobileOrientationGate from "./MobileOrientationGate"
 import WallDebug from "@/components/WallDebug"
 import ArtworkPanel from "@/components/ArtworkPanel"
@@ -106,7 +106,7 @@ export default function GalleryScene() {
         }}
       />
 
-      {isTouchDevice ? <MobileLookPad /> : null}
+      {isTouchDevice ? <MobileLookJoystick /> : null}
 
       <AimUI />
       <ArtworkPanel />
