@@ -1,8 +1,8 @@
 import GalleryScene from "@/components/GalleryScene"
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <main style={{ width: "100vw", height: "100vh", overflow: "hidden" }}>
+    <main className="gallery-page-lock">
       <GalleryScene />
     </main>
   )

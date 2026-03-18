@@ -156,7 +156,10 @@ function buildPositionedArtwork(
   const normalX = Math.sin(yaw)
   const normalZ = Math.cos(yaw)
 
-  const offsetFromWall = wall.thickness / 2 + wall.artworkOffset
+  const offsetFromWall =
+  wall.id === "poster_wall"
+    ? -(wall.thickness / 2 + wall.artworkOffset)
+    : wall.thickness / 2 + wall.artworkOffset
 
   const position: [number, number, number] = [
     wall.position[0] + tangentX * localCenter + normalX * offsetFromWall,
