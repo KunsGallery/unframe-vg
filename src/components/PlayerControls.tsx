@@ -57,6 +57,20 @@ export default function PlayerControls() {
     pitchRef.current = camera.rotation.x
   }, [camera])
 
+  // 👉 여기 추가
+  useEffect(() => {
+    if (!camera) return
+
+    camera.position.set(0, 1.6, 8)
+
+    camera.rotation.order = "YXZ"
+    camera.rotation.y = 0
+    camera.rotation.x = 0
+
+    yawRef.current = Math.PI
+    pitchRef.current = 0
+  }, [camera])
+
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       keys.current[e.code] = true

@@ -15,6 +15,7 @@ import ArtworkPanel from "@/components/ArtworkPanel"
 import AimUI from "@/components/AimUI"
 import ModelInspector from "@/components/ModelInspector"
 import FirestoreArtworkLayer from "@/components/FirestoreArtworkLayer"
+import InfoWallUI from "./InfoWallUI"
 
 export default function GalleryScene() {
   const isTouchDevice = useMemo(() => {
@@ -39,7 +40,7 @@ export default function GalleryScene() {
         }}
         onCreated={({ gl, scene }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping
-          gl.toneMappingExposure = 1.02
+          gl.toneMappingExposure = 0.95
           gl.outputColorSpace = THREE.SRGBColorSpace
           gl.shadowMap.enabled = true
           gl.shadowMap.type = THREE.PCFSoftShadowMap
@@ -57,15 +58,20 @@ export default function GalleryScene() {
             files="/textures/sky/Cloudymorning4k.hdr"
             background
             backgroundBlurriness={0.02}
-            environmentIntensity={0.7}
+            environmentIntensity={0.55}
           />
 
-          <ambientLight intensity={0.62} color="#fffaf2" />
-          <hemisphereLight intensity={0.92} color="#f6f9ff" groundColor="#8f867d" />
+          {/* 원래 잘 되던 조명 기반에서 조금 더 자연스럽게만 조정 */}
+          <ambientLight intensity={0.42} color="#fffaf2" />
+          <hemisphereLight
+            intensity={0.72}
+            color="#f6f9ff"
+            groundColor="#8f867d"
+          />
 
           <directionalLight
             position={[7, 14, 6]}
-            intensity={1.1}
+            intensity={0.82}
             color="#fff8ef"
             castShadow
             shadow-mapSize-width={2048}
@@ -79,21 +85,46 @@ export default function GalleryScene() {
             shadow-bias={-0.00012}
           />
 
-          <directionalLight position={[-8, 8, -10]} intensity={0.45} color="#eef4ff" />
+          <directionalLight
+            position={[-8, 8, -10]}
+            intensity={0.28}
+            color="#eef4ff"
+          />
 
-          <pointLight position={[-7.5, 3.4, -7.5]} intensity={8} distance={22} decay={2} color="#fff7ed" />
-          <pointLight position={[-7.5, 3.4, -18]} intensity={8} distance={22} decay={2} color="#fff7ed" />
-          <pointLight position={[-1.5, 3.2, -10]} intensity={5} distance={18} decay={2} color="#f3f7ff" />
+          <pointLight
+            position={[-7.5, 3.4, -7.5]}
+            intensity={5.5}
+            distance={22}
+            decay={2}
+            color="#fff7ed"
+          />
+          <pointLight
+            position={[-7.5, 3.4, -18]}
+            intensity={5.5}
+            distance={22}
+            decay={2}
+            color="#fff7ed"
+          />
+          <pointLight
+            position={[-1.5, 3.2, -10]}
+            intensity={3.2}
+            distance={18}
+            decay={2}
+            color="#f3f7ff"
+          />
 
           <GalleryModel />
 
           {typeof window !== "undefined" &&
-            new URLSearchParams(window.location.search).get("edit") === "1" && <WallDebug />}
+            new URLSearchParams(window.location.search).get("edit") === "1" && (
+              <WallDebug />
+            )}
         </Suspense>
 
         <PlayerControls />
         <ModelInspector />
         <FirestoreArtworkLayer />
+        <InfoWallUI />
       </Canvas>
 
       <div style={vignetteStyle} />
