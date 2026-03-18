@@ -29,7 +29,7 @@ export default function GalleryScene() {
     <>
       <Canvas
         camera={{ position: [0, 1.6, 4], fov: 50, near: 0.1, far: 120 }}
-        dpr={[1, 2]}
+        dpr={1}
         shadows
         gl={{
           antialias: true,

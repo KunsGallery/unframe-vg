@@ -176,7 +176,10 @@ function buildPositionedArtwork(
 }
 
 function ArtworkMesh({ artwork }: { artwork: PositionedArtwork }) {
-  const texture = useTexture(artwork.imageUrl)
+  const textureUrl =
+  artwork.wallId === "poster_wall" ? "/test/poster.jpg" : artwork.imageUrl
+
+  const texture = useTexture(textureUrl)
   const open = useArtworkStore((state) => state.open)
   const selected = useArtworkStore((state) => state.selected)
   const lastClosedAt = useArtworkStore((state) => state.lastClosedAt)
