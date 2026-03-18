@@ -156,10 +156,7 @@ function buildPositionedArtwork(
   const normalX = Math.sin(yaw)
   const normalZ = Math.cos(yaw)
 
-  const offsetFromWall =
-  wall.id === "poster_wall"
-    ? -(wall.thickness / 2 + wall.artworkOffset)
-    : wall.thickness / 2 + wall.artworkOffset
+  const offsetFromWall = wall.thickness / 2 + wall.artworkOffset
 
   const position: [number, number, number] = [
     wall.position[0] + tangentX * localCenter + normalX * offsetFromWall,
@@ -179,7 +176,7 @@ function buildPositionedArtwork(
 }
 
 function ArtworkMesh({ artwork }: { artwork: PositionedArtwork }) {
-  const texture = useTexture("/test/poster.jpg")
+  const texture = useTexture(artwork.imageUrl)
   const open = useArtworkStore((state) => state.open)
   const selected = useArtworkStore((state) => state.selected)
   const lastClosedAt = useArtworkStore((state) => state.lastClosedAt)
