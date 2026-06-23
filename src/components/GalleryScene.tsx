@@ -38,7 +38,7 @@ import {
   type Exhibition,
   type ExhibitionLighting,
 } from "@/data/exhibitions"
-import { getExhibitionBySlug } from "@/lib/getExhibitionBySlug"
+import { getStaticExhibitionBySlug } from "@/lib/getExhibitionBySlug"
 import { galleryWalls, type GalleryWall } from "@/data/galleryWalls"
 import GalleryWalls from "./GalleryWalls"
 
@@ -501,7 +501,7 @@ export default function GalleryScene({
 
   const exhibition =
     exhibitionProp ??
-    (activeSlug ? getExhibitionBySlug(activeSlug) : undefined) ??
+    (activeSlug ? getStaticExhibitionBySlug(activeSlug) : undefined) ??
     exhibitions[0]
   const exhibitionSlugForChildren = activeSlug ?? exhibition.slug
 

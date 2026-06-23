@@ -11,7 +11,7 @@ import {
   type ExhibitionMediaSettings,
   type ExhibitionSurfaceSettings,
 } from "@/data/exhibitions"
-import { getExhibitionBySlug } from "@/lib/getExhibitionBySlug"
+import { getStaticExhibitionBySlug } from "@/lib/getExhibitionBySlug"
 
 /* =========================
    CylinderWall media controls
@@ -179,7 +179,7 @@ export default function GalleryModel({
     (typeof params?.slug === "string" ? params.slug : undefined)
 
   const exhibition =
-    (slug ? getExhibitionBySlug(slug) : undefined) ?? exhibitions[0]
+    (slug ? getStaticExhibitionBySlug(slug) : undefined) ?? exhibitions[0]
 
   const [surfaces, setSurfaces] = useState<ExhibitionSurfaceSettings>(
     exhibition.surfaces

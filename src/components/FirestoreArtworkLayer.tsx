@@ -5,7 +5,7 @@ import { collection, onSnapshot, query, where } from "firebase/firestore"
 import { useParams } from "next/navigation"
 import { db } from "@/lib/firebase"
 import { exhibitions } from "@/data/exhibitions"
-import { getExhibitionBySlug } from "@/lib/getExhibitionBySlug"
+import { getStaticExhibitionBySlug } from "@/lib/getExhibitionBySlug"
 import ArtworkRenderer from "./ArtworkRenderer"
 
 type FirestoreArtwork = {
@@ -48,7 +48,7 @@ export default function FirestoreArtworkLayer({
     exhibitionSlug ??
     (typeof params?.slug === "string" ? params.slug : undefined)
   const exhibition =
-    (slug ? getExhibitionBySlug(slug) : undefined) ?? exhibitions[0]
+    (slug ? getStaticExhibitionBySlug(slug) : undefined) ?? exhibitions[0]
 
   const [artworks, setArtworks] = useState<FirestoreArtwork[]>([])
 

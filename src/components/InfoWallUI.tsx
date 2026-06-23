@@ -10,7 +10,7 @@ import {
   type InfoWallLink,
   type Exhibition,
 } from "@/data/exhibitions"
-import { getExhibitionBySlug } from "@/lib/getExhibitionBySlug"
+import { getStaticExhibitionBySlug } from "@/lib/getExhibitionBySlug"
 import { galleryWalls } from "@/data/galleryWalls"
 
 /* =========================
@@ -46,7 +46,7 @@ export default function InfoWallUI({ exhibition: exhibitionProp }: InfoWallUIPro
 
   const exhibition =
     exhibitionProp ??
-    (slug ? getExhibitionBySlug(slug) : undefined) ??
+    (slug ? getStaticExhibitionBySlug(slug) : undefined) ??
     exhibitions[0]
 
   const infoWall = galleryWalls.find((wall) => wall.id === "info_wall")
