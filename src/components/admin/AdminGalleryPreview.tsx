@@ -530,7 +530,12 @@ export default function AdminGalleryPreview({
             />
 
             <GalleryModel exhibitionSlug={exhibitionSlug} />
-            <FirestoreArtworkLayer exhibitionSlug={exhibitionSlug} />
+            <FirestoreArtworkLayer
+              exhibitionSlug={exhibitionSlug}
+              artworkBrightness={lighting.artworkBrightness}
+              matteBrightness={lighting.matteBrightness}
+              frameBrightness={lighting.frameBrightness}
+            />
           </Suspense>
         </Canvas>
       </div>

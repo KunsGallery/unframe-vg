@@ -40,8 +40,14 @@ function isFirestoreArtwork(value: unknown): value is FirestoreArtwork {
 
 export default function FirestoreArtworkLayer({
   exhibitionSlug,
+  artworkBrightness,
+  matteBrightness,
+  frameBrightness,
 }: {
   exhibitionSlug?: string
+  artworkBrightness?: number
+  matteBrightness?: number
+  frameBrightness?: number
 } = {}) {
   const params = useParams()
   const slug =
@@ -89,5 +95,12 @@ export default function FirestoreArtworkLayer({
 
   if (!artworks.length) return null
 
-  return <ArtworkRenderer artworks={artworks} />
+  return (
+    <ArtworkRenderer
+      artworks={artworks}
+      artworkBrightness={artworkBrightness}
+      matteBrightness={matteBrightness}
+      frameBrightness={frameBrightness}
+    />
+  )
 }

@@ -636,7 +636,12 @@ export default function GalleryScene({
 
         <PlayerControls />
         <ModelInspector />
-        <FirestoreArtworkLayer exhibitionSlug={exhibitionSlugForChildren} />
+        <FirestoreArtworkLayer
+          exhibitionSlug={exhibitionSlugForChildren}
+          artworkBrightness={lighting.artworkBrightness}
+          matteBrightness={lighting.matteBrightness}
+          frameBrightness={lighting.frameBrightness}
+        />
         <InfoWallUI exhibition={exhibition} />
       </Canvas>
 

@@ -21,6 +21,9 @@ type Artwork = {
 type Props = {
   artworks: Artwork[]
   spacing_cm?: number
+  artworkBrightness?: number
+  matteBrightness?: number
+  frameBrightness?: number
 }
 
 type PositionedArtwork = Artwork & {
@@ -34,8 +37,14 @@ type PositionedArtwork = Artwork & {
 export default function ArtworkRenderer({
   artworks,
   spacing_cm = 90,
+  artworkBrightness,
+  matteBrightness,
+  frameBrightness,
 }: Props) {
   const spacing = spacing_cm / 100
+  const safeArtworkBrightness = clampBrightness(artworkBrightness)
+  const safeMatteBrightness = clampBrightness(matteBrightness)
+  const safeFrameBrightness = clampBrightness(frameBrightness)
 
   const positioned = useMemo<PositionedArtwork[]>(() => {
     return galleryWalls.flatMap((wall) => {
@@ -56,10 +65,21 @@ export default function ArtworkRenderer({
   return (
     <>
       {positioned.map((artwork) => (
-        <ArtworkMesh key={artwork.id} artwork={artwork} />
+        <ArtworkMesh
+          key={artwork.id}
+          artwork={artwork}
+          artworkBrightness={safeArtworkBrightness}
+          matteBrightness={safeMatteBrightness}
+          frameBrightness={safeFrameBrightness}
+        />
       ))}
     </>
   )
+}
+
+function clampBrightness(value: number | undefined, fallback = 1) {
+  if (typeof value !== "number" || Number.isNaN(value)) return fallback
+  return Math.min(Math.max(value, 0.2), 3)
 }
 
 function layoutStraightWall(
@@ -178,7 +198,17 @@ function buildPositionedArtwork(
   }
 }
 
-function ArtworkMesh({ artwork }: { artwork: PositionedArtwork }) {
+function ArtworkMesh({
+  artwork,
+  artworkBrightness,
+  matteBrightness,
+  frameBrightness,
+}: {
+  artwork: PositionedArtwork
+  artworkBrightness: number
+  matteBrightness: number
+  frameBrightness: number
+}) {
   const texture = useTexture(artwork.imageUrl)
   const open = useArtworkStore((state) => state.open)
   const selected = useArtworkStore((state) => state.selected)
@@ -275,7 +305,7 @@ function ArtworkMesh({ artwork }: { artwork: PositionedArtwork }) {
           ]}
         />
         <meshStandardMaterial
-          color={new THREE.Color("#171411")}
+          color={new THREE.Color("#171411").multiplyScalar(frameBrightness)}
           roughness={0.42}
           metalness={0.14}
           emissive={new THREE.Color(hovered ? "#22180f" : "#0b0907")}
@@ -292,7 +322,7 @@ function ArtworkMesh({ artwork }: { artwork: PositionedArtwork }) {
           ]}
         />
         <meshStandardMaterial
-          color={new THREE.Color("#f3efe6")}
+          color={new THREE.Color("#f3efe6").multiplyScalar(matteBrightness)}
           roughness={0.92}
           metalness={0.01}
           emissive={new THREE.Color("#f3efe6")}
@@ -305,7 +335,7 @@ function ArtworkMesh({ artwork }: { artwork: PositionedArtwork }) {
         <planeGeometry args={[artwork.width_m, artwork.height_m]} />
         <meshBasicMaterial
           map={texture}
-          color={new THREE.Color().setScalar(1.1)}
+          color={new THREE.Color().setScalar(artworkBrightness)}
           toneMapped={false}
         />
       </mesh>
