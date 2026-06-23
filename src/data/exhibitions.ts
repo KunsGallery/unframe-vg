@@ -1,3 +1,8 @@
+/**
+ * Static fallback exhibition seed data.
+ * Firestore `exhibitions` is the primary source of truth.
+ * Public routes should prefer `getPublicExhibitions` / `getPublicExhibitionBySlug`.
+ */
 import { infoWallPresets, type InfoWallPresetKey } from "./infoWallPresets"
 
 export type InfoWallLink = {
