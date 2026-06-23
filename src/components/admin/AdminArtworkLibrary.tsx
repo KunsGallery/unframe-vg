@@ -11,6 +11,9 @@ export type AdminArtworkItem = {
   height_cm: number
   order?: number
   imageUrl: string
+  placementMode?: "auto" | "manual"
+  manualLocalOffsetX?: number
+  manualLocalOffsetY?: number
 }
 
 type Props = {
@@ -54,6 +57,9 @@ export default function AdminArtworkLibrary({
                   <span style={chipStyle}>{artwork.width_cm} × {artwork.height_cm} cm</span>
                   <span style={chipStyle}>{WALL_LABEL_MAP[artwork.wallId] ?? artwork.wallId}</span>
                   <span style={chipStyle}>#{artwork.order ?? 1}</span>
+                  <span style={chipStyle}>
+                    {artwork.placementMode === "manual" ? "manual" : "auto"}
+                  </span>
                 </div>
 
                 <div style={actionsRowStyle}>
@@ -221,10 +227,10 @@ const selectStyle: React.CSSProperties = {
 const deleteButtonStyle: React.CSSProperties = {
   minHeight: 42,
   borderRadius: 14,
-  border: "1px solid rgba(255,120,120,0.26)",
-  background: "rgba(255,120,120,0.08)",
-  color: "#ffd1d1",
+  border: "1px solid rgba(255,255,255,0.1)",
+  background: "rgba(255,80,80,0.14)",
+  color: "#ffd7d7",
   padding: "0 14px",
-  fontSize: 14,
+  fontSize: 13,
   cursor: "pointer",
 }

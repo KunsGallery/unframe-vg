@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { getExhibitionBySlug } from "@/lib/getExhibitionBySlug"
+import { getPublicExhibitionBySlug } from "@/lib/getExhibitions"
 import VirtualGalleryHeader from "@/components/VirtualGalleryHeader"
 
 export default async function ExhibitionDetailPage({
@@ -9,7 +9,7 @@ export default async function ExhibitionDetailPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const exhibition = getExhibitionBySlug(slug)
+  const exhibition = await getPublicExhibitionBySlug(slug)
 
   if (!exhibition) {
     notFound()

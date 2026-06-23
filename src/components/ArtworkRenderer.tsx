@@ -80,7 +80,14 @@ function layoutStraightWall(
     const localCenter = cursor + width_m / 2
     cursor += width_m + spacing
 
-    return buildPositionedArtwork(artwork, wall, width_m, height_m, localCenter, index)
+    return buildPositionedArtwork(
+      artwork,
+      wall,
+      width_m,
+      height_m,
+      localCenter,
+      index
+    )
   })
 }
 
@@ -102,18 +109,14 @@ function layoutInfoWall(
 
   const placeSide = (sideItems: Artwork[], direction: "left" | "right") => {
     let cursor =
-      direction === "left"
-        ? -(gap / 2) - spacing
-        : gap / 2 + spacing
+      direction === "left" ? -(gap / 2) - spacing : gap / 2 + spacing
 
     sideItems.forEach((artwork, index) => {
       const width_m = artwork.width_cm / 100
       const height_m = artwork.height_cm / 100
 
       const localCenter =
-        direction === "left"
-          ? cursor - width_m / 2
-          : cursor + width_m / 2
+        direction === "left" ? cursor - width_m / 2 : cursor + width_m / 2
 
       result.push(
         buildPositionedArtwork(
@@ -272,11 +275,12 @@ function ArtworkMesh({ artwork }: { artwork: PositionedArtwork }) {
           ]}
         />
         <meshStandardMaterial
-          color={hovered ? "#2a241d" : "#171411"}
-          roughness={0.5}
-          metalness={0.22}
-          emissive={hovered ? "#241b11" : "#000000"}
-          emissiveIntensity={hovered ? 0.16 : 0}
+          color={new THREE.Color("#171411")}
+          roughness={0.42}
+          metalness={0.14}
+          emissive={new THREE.Color(hovered ? "#22180f" : "#0b0907")}
+          emissiveIntensity={hovered ? 0.1 : 0.03}
+          toneMapped={false}
         />
       </mesh>
 
@@ -288,15 +292,22 @@ function ArtworkMesh({ artwork }: { artwork: PositionedArtwork }) {
           ]}
         />
         <meshStandardMaterial
-          color="#f3efe6"
-          roughness={0.95}
-          metalness={0.02}
+          color={new THREE.Color("#f3efe6")}
+          roughness={0.92}
+          metalness={0.01}
+          emissive={new THREE.Color("#f3efe6")}
+          emissiveIntensity={0.03}
+          toneMapped={false}
         />
       </mesh>
 
       <mesh position={[0, 0, 0.001]} castShadow={false} receiveShadow={false}>
         <planeGeometry args={[artwork.width_m, artwork.height_m]} />
-        <meshBasicMaterial map={texture} toneMapped={false} />
+        <meshBasicMaterial
+          map={texture}
+          color={new THREE.Color().setScalar(1.1)}
+          toneMapped={false}
+        />
       </mesh>
 
       {isNearEnough && artwork.wall.id !== "poster_wall" ? (
@@ -307,6 +318,7 @@ function ArtworkMesh({ artwork }: { artwork: PositionedArtwork }) {
               color="#f3efe6"
               roughness={0.92}
               metalness={0.02}
+              toneMapped={false}
             />
           </mesh>
 
@@ -343,7 +355,9 @@ function ArtworkMesh({ artwork }: { artwork: PositionedArtwork }) {
             maxWidth={labelWidth - 0.04}
             color="#5a5a5a"
           >
-            {`${Math.round(artwork.width_m * 100)} × ${Math.round(artwork.height_m * 100)} cm`}
+            {`${Math.round(artwork.width_m * 100)} × ${Math.round(
+              artwork.height_m * 100
+            )} cm`}
           </Text>
         </group>
       ) : null}

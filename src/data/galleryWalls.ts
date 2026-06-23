@@ -18,6 +18,9 @@ export type GalleryWall = {
   // 인포월처럼 중앙에 비워둘 영역
   reservedCenterGap?: number
   reservedCenterHeight?: number
+
+  // 임시 디버그용 벽, 충돌 제외
+  disableCollider?: boolean
 }
 
 const WALL_CENTER_Y = 1.6
@@ -154,7 +157,7 @@ export const galleryWalls: GalleryWall[] = [
     artCenterY: 1.3,
     artworkOffset: 0.06,
     color: DEFAULT_WALL_COLOR,
-},
+  },
 
   // INFO WALL
   {
@@ -167,8 +170,137 @@ export const galleryWalls: GalleryWall[] = [
     artCenterY: ART_CENTER_Y,
     artworkOffset: ARTWORK_OFFSET,
     color: DEFAULT_WALL_COLOR,
-    reservedCenterGap: 2.5,      // 250cm
-    reservedCenterHeight: 2.8,   // 280cm
+    reservedCenterGap: 2.5, // 250cm
+    reservedCenterHeight: 2.8, // 280cm
+  },
+
+  // =========================================================
+  // CURVE WALLS - TEMP DEBUG PLANES
+  // 포스터월 주변 임시 배치, 찾기 쉽게 좌/우 6면씩 정렬
+  // 나중에 실제 곡면 위치로 옮길 예정
+  // =========================================================
+
+  // LEFT CURVE DEBUG
+  {
+    id: "curve_left_01",
+    length: 1.9411,
+    height: 4.9386,
+    thickness: 0.04,
+    position: [-7.3722, 2.5693, -20.9192],
+    rotation: [0, -1.7017, 0],
+    artCenterY: 1.5,
+    artworkOffset: 0.08,
+  },
+  {
+    id: "curve_left_02",
+    length: 1.8089,
+    height: 4.9386,
+    thickness: 0.04,
+    position: [-6.8698, 2.5693, -22.7942],
+    rotation: [0, 1.1781 + Math.PI, 0],
+    artCenterY: 1.5,
+    artworkOffset: 0.08,
+  },
+  {
+    id: "curve_left_03",
+    length: 1.5533,
+    height: 4.9386,
+    thickness: 0.04,
+    position: [-5.8992, 2.5693, -24.4753],
+    rotation: [0, -2.2253, 0],
+    artCenterY: 1.5,
+    artworkOffset: 0.08,
+  },
+  {
+    id: "curve_left_04",
+    length: 1.5533,
+    height: 4.9386,
+    thickness: 0.04,
+    position: [-4.5267, 2.5693, -25.8479],
+    rotation: [0, -2.4871, 0],
+    artCenterY: 1.5,
+    artworkOffset: 0.08,
+  },
+  {
+    id: "curve_left_05",
+    length: 1.8089,
+    height: 4.9386,
+    thickness: 0.04,
+    position: [-2.8456, 2.5693, -26.8184],
+    rotation: [0, -2.7489, 0],
+    artCenterY: 1.5,
+    artworkOffset: 0.08,
+  },
+  {
+    id: "curve_left_06",
+    length: 1.9411,
+    height: 4.9386,
+    thickness: 0.04,
+    position: [-0.9706, 2.5693, -27.3208],
+    rotation: [0, 0.1309 + Math.PI, 0],
+    artCenterY: 1.5,
+    artworkOffset: 0.08,
+  },
+
+  {
+    id: "curve_right_01",
+    length: 1.9421,
+    height: 4.9386,
+    thickness: 0.04,
+    position: [7.3722, 2.5693, -20.9187],
+    rotation: [0, 1.7016, 0],
+    artCenterY: 1.5,
+    artworkOffset: 0.08,
+  },
+  {
+    id: "curve_right_02",
+    length: 1.8089,
+    height: 4.9386,
+    thickness: 0.04,
+    position: [6.8698, 2.5693, -22.7942],
+    rotation: [0, -1.1781 + Math.PI, 0],
+    artCenterY: 1.5,
+    artworkOffset: 0.08,
+  },
+  {
+    id: "curve_right_03",
+    length: 1.5533,
+    height: 4.9386,
+    thickness: 0.04,
+    position: [5.8992, 2.5693, -24.4753],
+    rotation: [0, -0.9163 + Math.PI, 0],
+    artCenterY: 1.5,
+    artworkOffset: 0.08,
+  },
+  {
+    id: "curve_right_04",
+    length: 1.5533,
+    height: 4.9386,
+    thickness: 0.04,
+    position: [4.5267, 2.5693, -25.8479],
+    rotation: [0, 2.4871, 0],
+    artCenterY: 1.5,
+    artworkOffset: 0.08,
+  },
+  {
+    id: "curve_right_05",
+    length: 1.8089,
+    height: 4.9386,
+    thickness: 0.04,
+    position: [2.8456, 2.5693, -26.8184],
+    rotation: [0, -0.3927 + Math.PI, 0],
+    artCenterY: 1.5,
+    artworkOffset: 0.08,
+  },
+  {
+    id: "curve_right_06",
+    length: 1.9411,
+    height: 4.9386,
+    thickness: 0.04,
+    position: [0.9706, 2.5693, -27.3208],
+    rotation: [0, -0.1309 + Math.PI, 0],
+    artCenterY: 1.5,
+    artworkOffset: 0.08,
   },
 ]
 
@@ -176,16 +308,32 @@ function round(value: number) {
   return Number(value.toFixed(4))
 }
 
-export function wallToCollider(wall: GalleryWall): BoxCollider {
+export function wallToCollider(
+  wall: GalleryWall,
+  options?: {
+    extraLength?: number
+    extraThickness?: number
+    extraHeight?: number
+  }
+): BoxCollider {
   const yaw = wall.rotation[1]
-  const lengthAlongX = Math.abs(Math.cos(yaw)) > Math.abs(Math.sin(yaw))
 
-  const halfLength = wall.length / 2
-  const halfThickness = wall.thickness / 2
-  const halfHeight = wall.height / 2
+  const extraLength = options?.extraLength ?? 0
+  const extraThickness = options?.extraThickness ?? 0
+  const extraHeight = options?.extraHeight ?? 0
 
-  const halfX = lengthAlongX ? halfLength : halfThickness
-  const halfZ = lengthAlongX ? halfThickness : halfLength
+  const halfLength = (wall.length + extraLength) / 2
+  const halfThickness = (wall.thickness + extraThickness) / 2
+  const halfHeight = (wall.height + extraHeight) / 2
+
+  // 회전된 벽의 AABB extents
+  const halfX =
+    Math.abs(Math.cos(yaw)) * halfLength +
+    Math.abs(Math.sin(yaw)) * halfThickness
+
+  const halfZ =
+    Math.abs(Math.sin(yaw)) * halfLength +
+    Math.abs(Math.cos(yaw)) * halfThickness
 
   return {
     id: wall.id,
@@ -202,4 +350,26 @@ export function wallToCollider(wall: GalleryWall): BoxCollider {
   }
 }
 
-export const galleryWallColliders: BoxCollider[] = galleryWalls.map(wallToCollider)
+const baseWallColliders: BoxCollider[] = galleryWalls
+  .filter((wall) => !wall.disableCollider)
+  .map((wall) => wallToCollider(wall))
+
+const curveWallCollisionColliders: BoxCollider[] = galleryWalls
+  .filter((wall) => wall.id.startsWith("curve_"))
+  .map((wall) =>
+    wallToCollider(wall, {
+      // 곡면벽 사이 미세한 틈 메우기용
+      extraLength: 0.18,
+      extraThickness: 0.2,
+      extraHeight: 0.12,
+    })
+  )
+  .map((collider) => ({
+    ...collider,
+    id: `${collider.id}__collision`,
+  }))
+
+export const galleryWallColliders: BoxCollider[] = [
+  ...baseWallColliders,
+  ...curveWallCollisionColliders,
+]

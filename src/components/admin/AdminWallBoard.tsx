@@ -9,17 +9,21 @@ type Props = {
   onMoveWall: (artwork: AdminArtworkItem, nextWallId: string) => Promise<void>
 }
 
+const DEFAULT_EMPTY_SLOTS = 4
+
 export default function AdminWallBoard({
   artworks,
   onMoveOrder,
-  onMoveWall,
 }: Props) {
   return (
     <section style={cardStyle}>
       <div style={headerStyle}>
         <div>
           <p style={eyebrowStyle}>Installation Board</p>
-          <h2 style={titleStyle}>벽별 배치 보드</h2>
+          <h2 style={titleStyle}>벽별 슬롯 배치 보드</h2>
+          <p style={descStyle}>
+            작품은 자동 간격으로 배치되고, 여기서는 슬롯 순서만 바꿉니다.
+          </p>
         </div>
       </div>
 
@@ -36,6 +40,12 @@ export default function AdminWallBoard({
                   .filter((artwork) => artwork.wallId === wall.id)
                   .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 
+                const totalSlots = Math.max(DEFAULT_EMPTY_SLOTS, items.length)
+                const slots = Array.from({ length: totalSlots }, (_, index) => ({
+                  slot: index + 1,
+                  artwork: items[index] ?? null,
+                }))
+
                 return (
                   <div key={wall.id} style={wallCardStyle}>
                     <div style={wallCardHeaderStyle}>
@@ -45,59 +55,86 @@ export default function AdminWallBoard({
                           length {wall.length}m · {items.length} works
                         </p>
                       </div>
+
+                      <div style={wallCountBadgeStyle}>
+                        {items.length}/{totalSlots}
+                      </div>
                     </div>
 
-                    <div style={wallItemsStyle}>
-                      {items.length === 0 ? (
-                        <div style={emptyWallStyle}>이 벽에는 아직 작품이 없습니다.</div>
-                      ) : (
-                        items.map((artwork, index) => (
-                          <article key={artwork.id} style={wallItemStyle}>
-                            <img
-                              src={artwork.imageUrl}
-                              alt={artwork.title ?? "artwork"}
-                              style={wallThumbStyle}
-                            />
+                    <div style={slotRailStyle}>
+                      {slots.map(({ slot, artwork }) => {
+                        const isEmpty = artwork == null
 
-                            <div style={wallItemMetaStyle}>
-                              <div>
-                                <h5 style={workTitleStyle}>{artwork.title || "Untitled"}</h5>
-                                <p style={workSubStyle}>
-                                  {artwork.artist || "Unknown Artist"} · #{artwork.order ?? index + 1}
-                                </p>
-                              </div>
-
-                              <div style={buttonRowStyle}>
-                                <button
-                                  type="button"
-                                  onClick={() => void onMoveOrder(artwork, "up")}
-                                  disabled={index === 0}
-                                  style={{
-                                    ...smallButtonStyle,
-                                    opacity: index === 0 ? 0.35 : 1,
-                                    cursor: index === 0 ? "not-allowed" : "pointer",
-                                  }}
-                                >
-                                  ↑
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={() => void onMoveOrder(artwork, "down")}
-                                  disabled={index === items.length - 1}
-                                  style={{
-                                    ...smallButtonStyle,
-                                    opacity: index === items.length - 1 ? 0.35 : 1,
-                                    cursor: index === items.length - 1 ? "not-allowed" : "pointer",
-                                  }}
-                                >
-                                  ↓
-                                </button>
-                              </div>
+                        return (
+                          <div
+                            key={`${wall.id}-slot-${slot}`}
+                            style={{
+                              ...slotCardStyle,
+                              ...(isEmpty ? emptySlotCardStyle : filledSlotCardStyle),
+                            }}
+                          >
+                            <div style={slotTopRowStyle}>
+                              <div style={slotIndexBadgeStyle}>{slot}</div>
+                              {!isEmpty ? (
+                                <div style={slotPositionTextStyle}>현재 슬롯</div>
+                              ) : (
+                                <div style={emptyTextStyle}>빈 슬롯</div>
+                              )}
                             </div>
-                          </article>
-                        ))
-                      )}
+
+                            {isEmpty ? (
+                              <div style={emptyBodyStyle}>
+                                <div style={emptyArtworkBoxStyle} />
+                              </div>
+                            ) : (
+                              <div style={filledBodyStyle}>
+                                <img
+                                  src={artwork.imageUrl}
+                                  alt={artwork.title ?? "artwork"}
+                                  style={wallThumbStyle}
+                                />
+
+                                <div style={slotMetaStyle}>
+                                  <h5 style={workTitleStyle}>
+                                    {artwork.title || "Untitled"}
+                                  </h5>
+                                  <p style={workSubStyle}>
+                                    {artwork.artist || "Unknown Artist"}
+                                  </p>
+                                </div>
+
+                                <div style={buttonRowStyle}>
+                                  <button
+                                    type="button"
+                                    onClick={() => void onMoveOrder(artwork, "up")}
+                                    disabled={slot === 1}
+                                    style={{
+                                      ...slotButtonStyle,
+                                      ...(slot === 1 ? disabledButtonStyle : null),
+                                    }}
+                                    title="왼쪽 슬롯으로 이동"
+                                  >
+                                    ←
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => void onMoveOrder(artwork, "down")}
+                                    disabled={slot === items.length}
+                                    style={{
+                                      ...slotButtonStyle,
+                                      ...(slot === items.length ? disabledButtonStyle : null),
+                                    }}
+                                    title="오른쪽 슬롯으로 이동"
+                                  >
+                                    →
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
                 )
@@ -131,10 +168,17 @@ const eyebrowStyle: React.CSSProperties = {
 }
 
 const titleStyle: React.CSSProperties = {
-  margin: "6px 0 0",
+  margin: "6px 0 8px",
   fontSize: 28,
   lineHeight: 1.1,
   color: "#f5f7fb",
+}
+
+const descStyle: React.CSSProperties = {
+  margin: 0,
+  fontSize: 13,
+  color: "rgba(255,255,255,0.56)",
+  lineHeight: 1.5,
 }
 
 const groupListStyle: React.CSSProperties = {
@@ -161,7 +205,7 @@ const groupTitleStyle: React.CSSProperties = {
 
 const wallsGridStyle: React.CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+  gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
   gap: 14,
 }
 
@@ -193,30 +237,86 @@ const wallMetaStyle: React.CSSProperties = {
   color: "rgba(255,255,255,0.5)",
 }
 
-const wallItemsStyle: React.CSSProperties = {
-  display: "grid",
-  gap: 10,
-}
-
-const emptyWallStyle: React.CSSProperties = {
-  minHeight: 120,
+const wallCountBadgeStyle: React.CSSProperties = {
+  minWidth: 54,
+  height: 30,
+  borderRadius: 999,
   display: "grid",
   placeItems: "center",
-  borderRadius: 16,
-  border: "1px dashed rgba(255,255,255,0.12)",
-  color: "rgba(255,255,255,0.42)",
-  textAlign: "center",
-  padding: 16,
+  fontSize: 12,
+  color: "#f5f7fb",
+  background: "rgba(255,255,255,0.08)",
+  border: "1px solid rgba(255,255,255,0.1)",
 }
 
-const wallItemStyle: React.CSSProperties = {
+const slotRailStyle: React.CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "60px 1fr",
+  gap: 10,
+}
+
+const slotCardStyle: React.CSSProperties = {
+  borderRadius: 16,
+  padding: 12,
+  border: "1px solid rgba(255,255,255,0.08)",
+}
+
+const filledSlotCardStyle: React.CSSProperties = {
+  background: "rgba(255,255,255,0.05)",
+}
+
+const emptySlotCardStyle: React.CSSProperties = {
+  background: "rgba(255,255,255,0.025)",
+  border: "1px dashed rgba(255,255,255,0.12)",
+}
+
+const slotTopRowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 10,
+  marginBottom: 10,
+}
+
+const slotIndexBadgeStyle: React.CSSProperties = {
+  width: 30,
+  height: 30,
+  borderRadius: 999,
+  display: "grid",
+  placeItems: "center",
+  fontSize: 12,
+  color: "#f5f7fb",
+  background: "rgba(255,255,255,0.08)",
+}
+
+const slotPositionTextStyle: React.CSSProperties = {
+  fontSize: 11,
+  color: "rgba(255,255,255,0.52)",
+}
+
+const emptyTextStyle: React.CSSProperties = {
+  fontSize: 11,
+  color: "rgba(255,255,255,0.34)",
+}
+
+const filledBodyStyle: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "60px 1fr auto",
   gap: 10,
   alignItems: "center",
-  padding: 10,
-  borderRadius: 16,
-  background: "rgba(255,255,255,0.04)",
+}
+
+const emptyBodyStyle: React.CSSProperties = {
+  minHeight: 72,
+  display: "grid",
+  alignItems: "center",
+}
+
+const emptyArtworkBoxStyle: React.CSSProperties = {
+  width: "100%",
+  height: 52,
+  borderRadius: 10,
+  background:
+    "linear-gradient(90deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.02) 100%)",
 }
 
 const wallThumbStyle: React.CSSProperties = {
@@ -228,23 +328,26 @@ const wallThumbStyle: React.CSSProperties = {
   background: "#0d1117",
 }
 
-const wallItemMetaStyle: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  gap: 8,
-  alignItems: "center",
+const slotMetaStyle: React.CSSProperties = {
+  minWidth: 0,
 }
 
 const workTitleStyle: React.CSSProperties = {
   margin: 0,
   fontSize: 14,
   color: "#f5f7fb",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
 }
 
 const workSubStyle: React.CSSProperties = {
   margin: "4px 0 0",
   fontSize: 12,
   color: "rgba(255,255,255,0.54)",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
 }
 
 const buttonRowStyle: React.CSSProperties = {
@@ -252,11 +355,18 @@ const buttonRowStyle: React.CSSProperties = {
   gap: 6,
 }
 
-const smallButtonStyle: React.CSSProperties = {
-  width: 32,
-  height: 32,
+const slotButtonStyle: React.CSSProperties = {
+  width: 34,
+  height: 34,
   borderRadius: 10,
   border: "1px solid rgba(255,255,255,0.1)",
   background: "rgba(255,255,255,0.06)",
   color: "#f5f7fb",
+  fontSize: 14,
+  cursor: "pointer",
+}
+
+const disabledButtonStyle: React.CSSProperties = {
+  opacity: 0.35,
+  cursor: "not-allowed",
 }

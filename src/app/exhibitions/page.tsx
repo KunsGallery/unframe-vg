@@ -1,8 +1,11 @@
 import Link from "next/link"
-import { exhibitions } from "@/data/exhibitions"
+import { getPublicExhibitions } from "@/lib/getExhibitions"
+import type { Exhibition } from "@/data/exhibitions"
 import VirtualGalleryHeader from "@/components/VirtualGalleryHeader"
 
-export default function ExhibitionsPage() {
+export default async function ExhibitionsPage() {
+  const exhibitions = await getPublicExhibitions()
+
   const currentExhibitions = exhibitions.filter((exhibition) => exhibition.isCurrent)
   const recommendedExhibitions = exhibitions.filter(
     (exhibition) => exhibition.isRecommended
@@ -74,7 +77,7 @@ function SectionBlock({
 }: {
   title: string
   description: string
-  items: typeof exhibitions
+  items: Exhibition[]
 }) {
   return (
     <section style={sectionStyle}>

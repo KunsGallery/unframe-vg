@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { exhibitions } from "@/data/exhibitions"
+import { getPublicExhibitions } from "@/lib/getExhibitions"
+import type { Exhibition } from "@/data/exhibitions"
 import VirtualGalleryHeader from "@/components/VirtualGalleryHeader"
 
 type HomeTab = "home" | "current" | "recommended" | "archive"
@@ -10,30 +11,83 @@ type HomeTab = "home" | "current" | "recommended" | "archive"
 export default function VirtualGalleryHomePage() {
   const [activeTab, setActiveTab] = useState<HomeTab>("home")
   const [isEntering, setIsEntering] = useState(true)
+  const [allExhibitions, setAllExhibitions] = useState<Exhibition[]>([])
   const tabBarRef = useRef<HTMLDivElement | null>(null)
 
-  const currentExhibitions = useMemo(
-    () => exhibitions.filter((exhibition) => exhibition.isCurrent),
-    []
-  )
-  const recommendedExhibitions = useMemo(
-    () => exhibitions.filter((exhibition) => exhibition.isRecommended),
-    []
+  useEffect(() => {
+    let mounted = true
+
+    void getPublicExhibitions()
+      .then((next) => {
+        if (mounted) {
+          setAllExhibitions(next)
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setAllExhibitions([])
+        }
+      })
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  const safeExhibitions = useMemo(
+    () => allExhibitions.filter((exhibition) => exhibition.slug.trim().length > 0),
+    [allExhibitions]
   )
 
-  const featuredCurrent = currentExhibitions[0] ?? exhibitions[0]
+  const currentExhibitions = useMemo(() => {
+    const flagged = safeExhibitions.filter((exhibition) => exhibition.isCurrent)
+
+    if (flagged.length > 0) {
+      return flagged
+    }
+
+    return safeExhibitions.slice(0, 1)
+  }, [safeExhibitions])
+
+  const featuredCurrent = currentExhibitions[0] ?? safeExhibitions[0]
+  const currentSlugSet = useMemo(
+    () => new Set(currentExhibitions.map((exhibition) => exhibition.slug)),
+    [currentExhibitions]
+  )
+  const recommendedExhibitions = useMemo(() => {
+    const flagged = safeExhibitions.filter(
+      (exhibition) => exhibition.isRecommended
+    )
+
+    if (flagged.length > 0) {
+      return flagged
+    }
+
+    return safeExhibitions
+      .filter((exhibition) => !currentSlugSet.has(exhibition.slug))
+      .slice(0, 3)
+  }, [currentSlugSet, safeExhibitions])
+  const archiveExhibitions = useMemo(
+    () =>
+      safeExhibitions.filter((exhibition) => !currentSlugSet.has(exhibition.slug)),
+    [currentSlugSet, safeExhibitions]
+  )
   const featuredRecommended = recommendedExhibitions.slice(0, 3)
-  const archiveExhibitions = exhibitions.filter((exhibition) => !exhibition.isCurrent)
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" })
-    setIsEntering(false)
+    const frame = window.requestAnimationFrame(() => {
+      setIsEntering(false)
+    })
 
     const id = window.setTimeout(() => {
       setIsEntering(true)
     }, 40)
 
-    return () => window.clearTimeout(id)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.clearTimeout(id)
+    }
   }, [activeTab])
 
   const handleTabChange = (tab: HomeTab) => {
@@ -217,7 +271,7 @@ export default function VirtualGalleryHomePage() {
               />
 
               <div style={gridStyle}>
-                {exhibitions.slice(0, 3).map((exhibition) => (
+                {safeExhibitions.slice(0, 3).map((exhibition) => (
                   <ExhibitionCard key={exhibition.slug} exhibition={exhibition} />
                 ))}
               </div>
@@ -279,12 +333,12 @@ export default function VirtualGalleryHomePage() {
               description="버츄얼 갤러리에서 공개된 전시 기록입니다."
             />
 
-            {(archiveExhibitions.length > 0 ? archiveExhibitions : exhibitions).length >
-            0 ? (
+            {(archiveExhibitions.length > 0 ? archiveExhibitions : safeExhibitions)
+              .length > 0 ? (
               <div style={gridStyle}>
                 {(archiveExhibitions.length > 0
                   ? archiveExhibitions
-                  : exhibitions
+                  : safeExhibitions
                 ).map((exhibition) => (
                   <ExhibitionCard key={exhibition.slug} exhibition={exhibition} />
                 ))}
@@ -345,7 +399,7 @@ function SectionHeader({
   )
 }
 
-function ExhibitionCard({ exhibition }: { exhibition: (typeof exhibitions)[number] }) {
+function ExhibitionCard({ exhibition }: { exhibition: Exhibition }) {
   return (
     <article style={cardStyle}>
       <div>

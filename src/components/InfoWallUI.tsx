@@ -8,6 +8,7 @@ import {
   exhibitions,
   getInfoWallLayoutByPreset,
   type InfoWallLink,
+  type Exhibition,
 } from "@/data/exhibitions"
 import { getExhibitionBySlug } from "@/lib/getExhibitionBySlug"
 import { galleryWalls } from "@/data/galleryWalls"
@@ -33,12 +34,20 @@ const MAIN_PANEL_HEIGHT = 2.12
 const LINK_PANEL_WIDTH = 2.95
 const LINK_PANEL_HEIGHT = 0.42
 
-export default function InfoWallUI() {
+type InfoWallLayout = ReturnType<typeof getInfoWallLayoutByPreset>
+
+type InfoWallUIProps = {
+  exhibition?: Exhibition | null
+}
+
+export default function InfoWallUI({ exhibition: exhibitionProp }: InfoWallUIProps = {}) {
   const params = useParams()
   const slug = typeof params?.slug === "string" ? params.slug : undefined
 
   const exhibition =
-    (slug ? getExhibitionBySlug(slug) : undefined) ?? exhibitions[0]
+    exhibitionProp ??
+    (slug ? getExhibitionBySlug(slug) : undefined) ??
+    exhibitions[0]
 
   const infoWall = galleryWalls.find((wall) => wall.id === "info_wall")
 
@@ -150,7 +159,16 @@ export default function InfoWallUI() {
   )
 }
 
-function MainInfoPanel({ content, L }: any) {
+function MainInfoPanel({
+  content,
+  L,
+}: {
+  content: Pick<
+    Exhibition,
+    "title" | "artist" | "period" | "description" | "summary" | "rightTitle" | "rightBody"
+  >
+  L: InfoWallLayout
+}) {
   return (
     <group>
       <mesh position={[0, 0, PANEL_SURFACE_Z]} renderOrder={2}>
@@ -225,36 +243,32 @@ function MainInfoPanel({ content, L }: any) {
         maxWidth={L.description.maxWidth}
         lineHeight={L.description.lineHeight}
       >
-        {content.description}
+        {content.summary || content.description}
       </Text>
 
-      {content.rightTitle ? (
-        <>
-          <Text
-            position={L.rightTitle.position}
-            anchorX="left"
-            anchorY="top"
-            fontSize={L.rightTitle.fontSize}
-            color="#111111"
-            maxWidth={L.rightTitle.maxWidth}
-            lineHeight={L.rightTitle.lineHeight}
-          >
-            {content.rightTitle}
-          </Text>
+      <Text
+        position={L.rightTitle.position}
+        anchorX="left"
+        anchorY="top"
+        fontSize={L.rightTitle.fontSize}
+        color="#111111"
+        maxWidth={L.rightTitle.maxWidth}
+        lineHeight={L.rightTitle.lineHeight}
+      >
+        {content.rightTitle || "About"}
+      </Text>
 
-          <Text
-            position={L.rightBody.position}
-            anchorX="left"
-            anchorY="top"
-            fontSize={L.rightBody.fontSize}
-            color="#575757"
-            maxWidth={L.rightBody.maxWidth}
-            lineHeight={L.rightBody.lineHeight}
-          >
-            {content.rightBody}
-          </Text>
-        </>
-      ) : null}
+      <Text
+        position={L.rightBody.position}
+        anchorX="left"
+        anchorY="top"
+        fontSize={L.rightBody.fontSize}
+        color="#575757"
+        maxWidth={L.rightBody.maxWidth}
+        lineHeight={L.rightBody.lineHeight}
+      >
+        {content.rightBody || ""}
+      </Text>
     </group>
   )
 }
@@ -264,8 +278,8 @@ function LinkStripPanel({
   L,
   onOpenLink,
 }: {
-  content: any
-  L: any
+  content: Pick<Exhibition, "links">
+  L: InfoWallLayout["links"]
   onOpenLink: (link: InfoWallLink) => void
 }) {
   return (
@@ -304,7 +318,7 @@ function LinkStripPanel({
       </Text>
 
       <group position={L.container.position}>
-        {content.links.map((link: InfoWallLink, index: number) => (
+        {(content.links || []).map((link: InfoWallLink, index: number) => (
           <LinkButton3D
             key={link.id}
             x={index * L.button.gap}
@@ -326,7 +340,7 @@ function LinkButton3D({
 }: {
   x: number
   link: InfoWallLink
-  L: any
+  L: InfoWallLayout["links"]
   onOpenLink: (link: InfoWallLink) => void
 }) {
   const [hovered, setHovered] = useState(false)
