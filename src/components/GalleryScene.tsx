@@ -38,7 +38,7 @@ import {
   type Exhibition,
   type ExhibitionLighting,
 } from "@/data/exhibitions"
-import { getStaticExhibitionBySlug } from "@/lib/getExhibitionBySlug"
+import { getStaticExhibitionBySlug } from "@/lib/getStaticExhibitionBySlug"
 import { galleryWalls, type GalleryWall } from "@/data/galleryWalls"
 import GalleryWalls from "./GalleryWalls"
 

@@ -10,7 +10,7 @@ import {
   type InfoWallLink,
   type Exhibition,
 } from "@/data/exhibitions"
-import { getStaticExhibitionBySlug } from "@/lib/getExhibitionBySlug"
+import { getStaticExhibitionBySlug } from "@/lib/getStaticExhibitionBySlug"
 import { galleryWalls } from "@/data/galleryWalls"
 
 /* =========================

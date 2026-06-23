@@ -5,7 +5,7 @@ import { collection, onSnapshot, query, where } from "firebase/firestore"
 import { useParams } from "next/navigation"
 import { db } from "@/lib/firebase"
 import { exhibitions } from "@/data/exhibitions"
-import { getStaticExhibitionBySlug } from "@/lib/getExhibitionBySlug"
+import { getStaticExhibitionBySlug } from "@/lib/getStaticExhibitionBySlug"
 import ArtworkRenderer from "./ArtworkRenderer"
 
 type FirestoreArtwork = {

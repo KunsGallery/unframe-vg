@@ -11,7 +11,7 @@ import {
   type ExhibitionMediaSettings,
   type ExhibitionSurfaceSettings,
 } from "@/data/exhibitions"
-import { getStaticExhibitionBySlug } from "@/lib/getExhibitionBySlug"
+import { getStaticExhibitionBySlug } from "@/lib/getStaticExhibitionBySlug"
 
 /* =========================
    CylinderWall media controls
