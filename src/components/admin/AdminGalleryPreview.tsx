@@ -30,6 +30,7 @@ type Props = {
   exhibitionSlug: string
   activeWallId: string
   exhibition?: AdminPreviewExhibition | null
+  lighting?: ExhibitionLighting
 }
 
 type CameraPreset = {
@@ -296,6 +297,7 @@ export default function AdminGalleryPreview({
   exhibitionSlug,
   activeWallId,
   exhibition,
+  lighting: lightingProp,
 }: Props) {
   const previewExhibition =
     exhibition ?? {
@@ -313,18 +315,18 @@ export default function AdminGalleryPreview({
       isRecommended: false,
     }
 
-  const [lighting, setLighting] = useState<ExhibitionLighting>(
+  const [loadedLighting, setLoadedLighting] = useState<ExhibitionLighting>(
     defaultLightingSettings
   )
 
   useEffect(() => {
-    setLighting(defaultLightingSettings)
+    setLoadedLighting(defaultLightingSettings)
 
     const ref = doc(db, "exhibitionSettings", exhibitionSlug)
 
     const unsub = onSnapshot(ref, (snap) => {
       if (!snap.exists()) {
-        setLighting(defaultLightingSettings)
+        setLoadedLighting(defaultLightingSettings)
         return
       }
 
@@ -332,7 +334,7 @@ export default function AdminGalleryPreview({
         lighting: Partial<ExhibitionLighting>
       }>
 
-      setLighting({
+      setLoadedLighting({
         ...defaultLightingSettings,
         ...(data.lighting ?? {}),
       })
@@ -340,6 +342,8 @@ export default function AdminGalleryPreview({
 
     return () => unsub()
   }, [exhibitionSlug])
+
+  const activeLighting = lightingProp ?? loadedLighting
 
   const wallPreset = useMemo(
     () => getWallCameraPreset(activeWallId),
@@ -463,6 +467,12 @@ export default function AdminGalleryPreview({
 
       <div style={canvasWrapStyle}>
         <Canvas
+          key={JSON.stringify({
+            lighting: activeLighting,
+            wall: activeWallId,
+            preset: selectedPreset.id,
+            path: selectedPath?.id ?? null,
+          })}
           camera={{
             position: selectedPreset.position,
             fov: selectedPreset.fov,
@@ -478,23 +488,23 @@ export default function AdminGalleryPreview({
           }}
           onCreated={({ gl, scene }) => {
             gl.toneMapping = THREE.ACESFilmicToneMapping
-            gl.toneMappingExposure = lighting.toneMappingExposure
+            gl.toneMappingExposure = activeLighting.toneMappingExposure
             gl.outputColorSpace = THREE.SRGBColorSpace
             gl.shadowMap.enabled = true
             gl.shadowMap.type = THREE.PCFSoftShadowMap
 
-            scene.background = new THREE.Color(lighting.backgroundColor)
+            scene.background = new THREE.Color(activeLighting.backgroundColor)
             scene.fog = new THREE.Fog(
-              lighting.fogColor,
-              lighting.fogNear,
-              lighting.fogFar
+              activeLighting.fogColor,
+              activeLighting.fogNear,
+              activeLighting.fogFar
             )
           }}
         >
-          <color attach="background" args={[lighting.backgroundColor]} />
+          <color attach="background" args={[activeLighting.backgroundColor]} />
           <fog
             attach="fog"
-            args={[lighting.fogColor, lighting.fogNear, lighting.fogFar]}
+            args={[activeLighting.fogColor, activeLighting.fogNear, activeLighting.fogFar]}
           />
 
           <Suspense fallback={null}>
@@ -505,18 +515,18 @@ export default function AdminGalleryPreview({
             />
 
             <ambientLight
-              intensity={lighting.ambientIntensity}
-              color={lighting.ambientColor}
+              intensity={activeLighting.ambientIntensity}
+              color={activeLighting.ambientColor}
             />
             <hemisphereLight
-              intensity={lighting.hemisphereIntensity}
-              color={lighting.hemisphereSkyColor}
-              groundColor={lighting.hemisphereGroundColor}
+              intensity={activeLighting.hemisphereIntensity}
+              color={activeLighting.hemisphereSkyColor}
+              groundColor={activeLighting.hemisphereGroundColor}
             />
             <directionalLight
               position={[6, 12, 4]}
-              intensity={lighting.directionalIntensity}
-              color={lighting.directionalColor}
+              intensity={activeLighting.directionalIntensity}
+              color={activeLighting.directionalColor}
               castShadow
               shadow-mapSize-width={2048}
               shadow-mapSize-height={2048}
@@ -532,9 +542,9 @@ export default function AdminGalleryPreview({
             <GalleryModel exhibitionSlug={exhibitionSlug} />
             <FirestoreArtworkLayer
               exhibitionSlug={exhibitionSlug}
-              artworkBrightness={lighting.artworkBrightness}
-              matteBrightness={lighting.matteBrightness}
-              frameBrightness={lighting.frameBrightness}
+              artworkBrightness={activeLighting.artworkBrightness}
+              matteBrightness={activeLighting.matteBrightness}
+              frameBrightness={activeLighting.frameBrightness}
             />
           </Suspense>
         </Canvas>

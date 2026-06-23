@@ -99,11 +99,15 @@ const surfaceHeroKeys: Array<"wallColor" | "floorColor" | "roofColor"> = [
 type AdminLightingPanelProps = {
   selectedSlug: string
   selectedTitle?: string
+  onLightingPreviewChange?: (lighting: LightingForm) => void
+  onLightingSaved?: (lighting: LightingForm) => void
 }
 
 export default function AdminLightingPanel({
   selectedSlug,
   selectedTitle,
+  onLightingPreviewChange,
+  onLightingSaved,
 }: AdminLightingPanelProps) {
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState("전시 설정을 불러오는 중...")
@@ -172,6 +176,10 @@ export default function AdminLightingPanel({
     }
   }, [activeSlug])
 
+  useEffect(() => {
+    onLightingPreviewChange?.(lightingForm)
+  }, [lightingForm, onLightingPreviewChange])
+
   function updateLightingNumber<K extends keyof LightingForm>(key: K, value: string) {
     const next = Number(value)
     setLightingForm((prev) => ({
@@ -201,6 +209,7 @@ export default function AdminLightingPanel({
         { merge: true }
       )
 
+      onLightingSaved?.(lightingForm)
       setStatus("전시 설정을 저장했습니다.")
     } catch (error) {
       console.error(error)

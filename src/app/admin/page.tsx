@@ -13,6 +13,7 @@ import {
   writeBatch,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase"
+import { defaultLightingSettings } from "@/lib/defaultExhibitionSettings"
 import { uploadToImgbb } from "@/lib/uploadToImgbb"
 import { ADMIN_WALLS } from "@/lib/adminWalls"
 import { exhibitions } from "@/data/exhibitions"
@@ -112,6 +113,9 @@ export default function AdminPage() {
   const [activeWallId, setActiveWallId] = useState("left_01")
   const [selectedExhibitionSlug, setSelectedExhibitionSlug] = useState(
     exhibitions[0]?.slug ?? ""
+  )
+  const [previewLighting, setPreviewLighting] = useState(
+    defaultLightingSettings
   )
   const [activeSection, setActiveSection] =
     useState<AdminSection>("overview")
@@ -218,6 +222,10 @@ export default function AdminPage() {
         : null,
     [selectedExhibition]
   )
+
+  useEffect(() => {
+    setPreviewLighting(defaultLightingSettings)
+  }, [selectedExhibitionSlug])
 
   const exhibitionArtworks = useMemo(() => {
     return artworks.filter(
@@ -651,6 +659,8 @@ export default function AdminPage() {
                   selectedTitle={
                     selectedExhibition?.title ?? selectedExhibitionSlug
                   }
+                  onLightingPreviewChange={setPreviewLighting}
+                  onLightingSaved={setPreviewLighting}
                 />
               </div>
             )}
@@ -704,6 +714,7 @@ export default function AdminPage() {
               exhibitionSlug={selectedExhibitionSlug}
               activeWallId={activeWallId}
               exhibition={selectedPreviewExhibition}
+              lighting={previewLighting}
             />
           </div>
         </aside>
