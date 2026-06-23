@@ -1,0 +1,57 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    /**
+     * Public exhibition metadata.
+     * Public pages need read access for:
+     * - /
+     * - /exhibitions
+     * - /exhibitions/{slug}
+     * - /exhibitions/{slug}/gallery
+     */
+    match /exhibitions/{document=**} {
+      allow read: if true;
+
+      // TODO:
+      // Replace this with a real admin auth policy before production writes.
+      // Recommended:
+      // allow write: if request.auth != null
+      //   && request.auth.uid in ['YOUR_ADMIN_UID'];
+      //
+      // Or, if custom claims are configured:
+      // allow write: if request.auth != null
+      //   && request.auth.token.admin == true;
+      allow write: if false;
+    }
+
+    /**
+     * Public artwork data.
+     * Gallery visitors need read access to render artworks.
+     */
+    match /artworks/{document=**} {
+      allow read: if true;
+
+      // TODO: Replace with real admin auth policy.
+      allow write: if false;
+    }
+
+    /**
+     * Public exhibition display settings.
+     * Gallery visitors need read access for lighting, surfaces, and media.
+     */
+    match /exhibitionSettings/{document=**} {
+      allow read: if true;
+
+      // TODO: Replace with real admin auth policy.
+      allow write: if false;
+    }
+
+    /**
+     * Default deny for all other documents.
+     */
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
