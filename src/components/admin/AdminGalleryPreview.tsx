@@ -1,11 +1,13 @@
 "use client"
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
+import { Environment } from "@react-three/drei"
 import { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import * as THREE from "three"
 import { doc, onSnapshot } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { defaultLightingSettings } from "@/lib/defaultExhibitionSettings"
+import ArtworkLightingLayer from "@/components/ArtworkLightingLayer"
 import { galleryWalls } from "@/data/galleryWalls"
 import GalleryModel from "@/components/GalleryModel"
 import FirestoreArtworkLayer from "@/components/FirestoreArtworkLayer"
@@ -514,6 +516,13 @@ export default function AdminGalleryPreview({
               playVersion={playVersion}
             />
 
+            <Environment
+              files="/textures/sky/Cloudymorning4k.hdr"
+              background
+              backgroundBlurriness={activeLighting.environmentBackgroundBlurriness}
+              environmentIntensity={activeLighting.environmentIntensity}
+            />
+
             <ambientLight
               intensity={activeLighting.ambientIntensity}
               color={activeLighting.ambientColor}
@@ -537,6 +546,11 @@ export default function AdminGalleryPreview({
               shadow-camera-top={24}
               shadow-camera-bottom={-24}
               shadow-bias={-0.00012}
+            />
+
+            <ArtworkLightingLayer
+              lighting={activeLighting}
+              exhibitionSlug={exhibitionSlug}
             />
 
             <GalleryModel exhibitionSlug={exhibitionSlug} />
