@@ -41,6 +41,7 @@ import {
 import { getStaticExhibitionBySlug } from "@/lib/getStaticExhibitionBySlug"
 import { galleryWalls, type GalleryWall } from "@/data/galleryWalls"
 import GalleryWalls from "./GalleryWalls"
+import { SPACE_TEMPLATES } from "@/data/spaceTemplates"
 
 type FirestoreArtwork = {
   id: string
@@ -64,6 +65,7 @@ type PositionedArtwork = FirestoreArtwork & {
 
 const FRAME_PADDING_X = 0.18
 const FRAME_PADDING_Y = 0.18
+const DEFAULT_SPACE_ID = "unframe-skylight-room-v1"
 
 function isFirestoreArtwork(value: unknown): value is FirestoreArtwork {
   if (!value || typeof value !== "object") return false
@@ -222,6 +224,43 @@ function kelvinToColor(kelvin: number) {
   const clamp = (value: number) => Math.max(0, Math.min(255, value)) / 255
 
   return new THREE.Color(clamp(red), clamp(green), clamp(blue))
+}
+
+function resolveSpaceTemplate(spaceId?: string): {
+  template: (typeof SPACE_TEMPLATES)[number]
+  requestedSpaceId?: string
+  isFallback: boolean
+} {
+  const normalizedSpaceId = spaceId?.trim()
+  const defaultTemplate =
+    SPACE_TEMPLATES.find((template) => template.id === DEFAULT_SPACE_ID) ??
+    SPACE_TEMPLATES[0]
+
+  if (!normalizedSpaceId) {
+    return {
+      template: defaultTemplate,
+      requestedSpaceId: undefined,
+      isFallback: false,
+    }
+  }
+
+  const template = SPACE_TEMPLATES.find(
+    (item) => item.id === normalizedSpaceId
+  )
+
+  if (template) {
+    return {
+      template,
+      requestedSpaceId: normalizedSpaceId,
+      isFallback: false,
+    }
+  }
+
+  return {
+    template: defaultTemplate,
+    requestedSpaceId: normalizedSpaceId,
+    isFallback: true,
+  }
 }
 
 function usePositionedArtworks(exhibitionSlug: string) {
@@ -489,21 +528,39 @@ function ArtworkLight({
 type GallerySceneProps = {
   exhibitionSlug?: string
   exhibition?: Exhibition | null
+  spaceId?: string
 }
 
 export default function GalleryScene({
   exhibitionSlug,
   exhibition: exhibitionProp,
+  spaceId,
 }: GallerySceneProps = {}) {
   const params = useParams()
   const slugFromParams = typeof params?.slug === "string" ? params.slug : undefined
   const activeSlug = exhibitionSlug ?? slugFromParams
+  const warnedSpaceIdRef = useRef<string | null>(null)
 
   const exhibition =
     exhibitionProp ??
     (activeSlug ? getStaticExhibitionBySlug(activeSlug) : undefined) ??
     exhibitions[0]
   const exhibitionSlugForChildren = activeSlug ?? exhibition.slug
+  const resolvedSpace = useMemo(
+    () => resolveSpaceTemplate(spaceId),
+    [spaceId]
+  )
+  const activeSpaceTemplate = resolvedSpace.template
+
+  useEffect(() => {
+    if (!resolvedSpace.isFallback || !resolvedSpace.requestedSpaceId) return
+    if (warnedSpaceIdRef.current === resolvedSpace.requestedSpaceId) return
+
+    warnedSpaceIdRef.current = resolvedSpace.requestedSpaceId
+    console.warn(
+      `[GalleryScene] Unknown spaceId "${resolvedSpace.requestedSpaceId}". Falling back to "${DEFAULT_SPACE_ID}" (UNFRAME Skylight Room).`
+    )
+  }, [resolvedSpace.isFallback, resolvedSpace.requestedSpaceId])
 
   const [lighting, setLighting] = useState<ExhibitionLighting>(exhibition.lighting)
 
@@ -572,6 +629,9 @@ export default function GalleryScene({
             lighting.fogFar
           )
         }}
+        onPointerMissed={() => {
+          window.dispatchEvent(new Event("gallery:pointer-missed"))
+        }}
         style={{ touchAction: "none" }}
       >
         <color attach="background" args={[lighting.backgroundColor]} />
@@ -625,7 +685,10 @@ export default function GalleryScene({
             exhibitionSlug={exhibitionSlugForChildren}
           />
 
-          <GalleryModel exhibitionSlug={exhibitionSlugForChildren} />
+          <GalleryModel
+            exhibitionSlug={exhibitionSlugForChildren}
+            modelPath={activeSpaceTemplate.modelPath}
+          />
           <GalleryWalls />
 
           {typeof window !== "undefined" &&

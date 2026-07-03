@@ -42,6 +42,8 @@ const CURVE_WALL_DEBUG_COLORS: Record<string, string> = {
   CurveWall_R_06: "#ffc0e8",
 }
 
+const DEFAULT_MODEL_PATH = "/models/unframe_skylight_room_v1.glb"
+
 function applyCylinderUvTransform(texture: THREE.Texture) {
   texture.colorSpace = THREE.SRGBColorSpace
   texture.wrapS = THREE.ClampToEdgeWrapping
@@ -169,10 +171,13 @@ function createInvisibleBoxColliderFromMesh(mesh: THREE.Mesh) {
 
 export default function GalleryModel({
   exhibitionSlug,
+  modelPath,
 }: {
   exhibitionSlug?: string
+  modelPath?: string
 } = {}) {
-  const gltf = useGLTF("/models/gallery.glb")
+  const resolvedModelPath = modelPath?.trim() || DEFAULT_MODEL_PATH
+  const gltf = useGLTF(resolvedModelPath)
   const params = useParams()
   const slug =
     exhibitionSlug ??
@@ -575,4 +580,4 @@ export default function GalleryModel({
   return <primitive object={model} />
 }
 
-useGLTF.preload("/models/gallery.glb")
+useGLTF.preload(DEFAULT_MODEL_PATH)
