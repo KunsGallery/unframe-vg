@@ -1,4 +1,4 @@
-import GalleryScene from "@/components/GalleryScene"
+import GallerySpaceResolver from "@/components/GallerySpaceResolver"
 import { getStaticExhibitionBySlug } from "@/lib/getStaticExhibitionBySlug"
 import {
   defaultLightingPreset,
@@ -45,11 +45,9 @@ export default async function ExhibitionGalleryPage({
   const { slug } = await params
   const resolvedSearchParams = await searchParams
   const spaceIdValue = resolvedSearchParams.spaceId
-  const previewSpaceId = Array.isArray(spaceIdValue) ? spaceIdValue[0] : spaceIdValue
+  const querySpaceId = Array.isArray(spaceIdValue) ? spaceIdValue[0] : spaceIdValue
   const staticExhibition = getStaticExhibitionBySlug(slug)
   const exhibition = staticExhibition ?? createFallbackExhibition(slug)
-  const spaceId =
-    previewSpaceId?.trim() || exhibition.spaceId || DEFAULT_SPACE_ID
 
   if (!staticExhibition) {
     console.warn(
@@ -59,10 +57,11 @@ export default async function ExhibitionGalleryPage({
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
-      <GalleryScene
-        exhibitionSlug={slug}
+      <GallerySpaceResolver
+        slug={slug}
         exhibition={exhibition}
-        spaceId={spaceId}
+        querySpaceId={querySpaceId}
+        fallbackSpaceId={exhibition.spaceId || DEFAULT_SPACE_ID}
       />
     </div>
   )
