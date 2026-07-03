@@ -213,6 +213,9 @@ function ArtworkMesh({
   const open = useArtworkStore((state) => state.open)
   const selected = useArtworkStore((state) => state.selected)
   const lastClosedAt = useArtworkStore((state) => state.lastClosedAt)
+  const interactionSuppressed = useArtworkStore(
+    (state) => state.interactionSuppressed
+  )
 
   const { gl, camera } = useThree()
   const groupRef = useRef<THREE.Group>(null)
@@ -257,6 +260,10 @@ function ArtworkMesh({
     e.stopPropagation()
 
     if (selected) return
+    if (interactionSuppressed) {
+      window.dispatchEvent(new Event("gallery:pointer-missed"))
+      return
+    }
     if (!isNearEnough) return
     if (Date.now() - lastClosedAt < 420) return
 

@@ -12,6 +12,7 @@ import {
 } from "@/data/exhibitions"
 import { getStaticExhibitionBySlug } from "@/lib/getStaticExhibitionBySlug"
 import { galleryWalls } from "@/data/galleryWalls"
+import { useArtworkStore } from "@/store/useArtworkStore"
 
 /* =========================
    여기만 미세조정하면 됨
@@ -54,6 +55,14 @@ export default function InfoWallUI({ exhibition: exhibitionProp }: InfoWallUIPro
   const [pendingLink, setPendingLink] = useState<InfoWallLink | null>(null)
   const [mounted, setMounted] = useState(false)
   const portalRef = useRef<HTMLElement>(null!)
+  const suppressInteraction = useArtworkStore(
+    (state) => state.suppressInteraction
+  )
+
+  function closePendingLink() {
+    suppressInteraction()
+    setPendingLink(null)
+  }
 
   useEffect(() => {
     portalRef.current = document.body
@@ -118,7 +127,7 @@ export default function InfoWallUI({ exhibition: exhibitionProp }: InfoWallUIPro
 
       {mounted && pendingLink && portalRef.current ? (
         <Html fullscreen portal={portalRef}>
-          <div style={overlayStyle} onClick={() => setPendingLink(null)}>
+          <div style={overlayStyle} onClick={closePendingLink}>
             <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
               <p style={modalEyebrowStyle}>Open external link</p>
               <h3 style={modalTitleStyle}>{pendingLink.label}</h3>
@@ -131,7 +140,7 @@ export default function InfoWallUI({ exhibition: exhibitionProp }: InfoWallUIPro
               <div style={modalButtonRowStyle}>
                 <button
                   type="button"
-                  onClick={() => setPendingLink(null)}
+                  onClick={closePendingLink}
                   style={secondaryButtonStyle}
                 >
                   취소
@@ -144,7 +153,7 @@ export default function InfoWallUI({ exhibition: exhibitionProp }: InfoWallUIPro
                       "_blank",
                       "noopener,noreferrer"
                     )
-                    setPendingLink(null)
+                    closePendingLink()
                   }}
                   style={primaryButtonStyle}
                 >
