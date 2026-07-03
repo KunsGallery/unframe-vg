@@ -26,6 +26,7 @@ import AdminLightingPanel from "@/components/admin/AdminLightingPanel"
 import AdminVideoPanel from "@/components/admin/AdminVideoPanel"
 import AdminGalleryPreview from "@/components/admin/AdminGalleryPreview"
 import AdminExhibitionManager from "@/components/admin/AdminExhibitionManager"
+import SpaceSelector from "@/components/SpaceSelector"
 
 type FirestoreArtwork = AdminArtworkItem & {
   exhibitionSlug: string
@@ -66,6 +67,7 @@ type AdminSection =
   | "lighting"
   | "media"
   | "camera"
+  | "spaces"
 
 const SECTION_META: Record<
   AdminSection,
@@ -100,6 +102,11 @@ const SECTION_META: Record<
     label: "Camera",
     title: "프리뷰 / 촬영 카메라",
     desc: "벽 정면 프리뷰와 촬영 프리셋 확인",
+  },
+  spaces: {
+    label: "Spaces",
+    title: "UNFRAME Space Templates",
+    desc: "Choose a virtual gallery space and preview how it loads in the exhibition viewer.",
   },
 }
 
@@ -683,6 +690,12 @@ export default function AdminPage() {
                     촬영 프리셋과 시네마틱 이동은 우측 프리뷰 패널에서 바로 확인합니다.
                   </p>
                 </div>
+              </div>
+            )}
+
+            {activeSection === "spaces" && (
+              <div style={sectionStackStyle}>
+                <SpaceSelector />
               </div>
             )}
           </div>
