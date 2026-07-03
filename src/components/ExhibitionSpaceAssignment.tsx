@@ -1,14 +1,22 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { exhibitions as EXHIBITIONS, type Exhibition } from "@/data/exhibitions"
-import { SPACE_TEMPLATES, type SpaceTemplate } from "@/data/spaceTemplates"
+import { SPACE_TEMPLATES } from "@/data/spaceTemplates"
+import {
+  getExhibitionSpaceAssignments,
+  saveExhibitionSpaceAssignment,
+  type ExhibitionSpaceAssignmentMap,
+  type ExhibitionSpaceAssignmentSaveResult,
+} from "@/lib/exhibitionSpaceAssignments"
 
-const STORAGE_KEY = "unframe-vg:exhibition-space-assignments"
 const DEFAULT_SPACE_ID = "unframe-skylight-room-v1"
 
-type SpaceAssignments = Record<string, string>
+type RowStatus = {
+  state: "idle" | "saving" | "saved" | "error"
+  message?: string
+}
 
 function isKnownSpaceId(spaceId: string) {
   return SPACE_TEMPLATES.some((template) => template.id === spaceId)
@@ -16,7 +24,7 @@ function isKnownSpaceId(spaceId: string) {
 
 function getEffectiveSpaceId(
   exhibition: Exhibition,
-  assignments: SpaceAssignments
+  assignments: ExhibitionSpaceAssignmentMap
 ) {
   const selectedSpaceId = assignments[exhibition.slug]
   const fallbackSpaceId = exhibition.spaceId ?? DEFAULT_SPACE_ID
@@ -25,57 +33,90 @@ function getEffectiveSpaceId(
   return isKnownSpaceId(candidate) ? candidate : DEFAULT_SPACE_ID
 }
 
-function readStoredAssignments(): SpaceAssignments {
-  if (typeof window === "undefined") {
-    return {}
-  }
+function getStatusMessage(state: RowStatus["state"], message?: string) {
+  if (state === "saving") return "Saving..."
+  if (state === "saved") return message ?? "Saved"
+  if (state === "error") return message ?? "Save failed"
+  return message ?? ""
+}
 
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
-    if (!raw) return {}
+function getSaveMessage(result: ExhibitionSpaceAssignmentSaveResult) {
+  if (result === "firestore") return "Saved to Firestore"
+  if (result === "localStorage") return "Saved locally"
+  return "Save failed"
+}
 
-    const parsed = JSON.parse(raw) as unknown
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      return {}
-    }
+export default function ExhibitionSpaceAssignment() {
+  const exhibitions = EXHIBITIONS
+  const [assignments, setAssignments] = useState<ExhibitionSpaceAssignmentMap>(
+    {}
+  )
+  const [rowStatuses, setRowStatuses] = useState<Record<string, RowStatus>>({})
+  const [isLoadingAssignments, setIsLoadingAssignments] = useState(true)
+  const saveTokensRef = useRef<Record<string, number>>({})
 
-    const next: SpaceAssignments = {}
+  useEffect(() => {
+    let mounted = true
 
-    for (const [slug, value] of Object.entries(parsed as Record<string, unknown>)) {
-      if (typeof slug === "string" && typeof value === "string" && value.trim()) {
-        const normalizedValue = value.trim()
-        if (isKnownSpaceId(normalizedValue)) {
-          next[slug] = normalizedValue
+    async function loadAssignments() {
+      setIsLoadingAssignments(true)
+
+      try {
+        const nextAssignments = await getExhibitionSpaceAssignments()
+        if (!mounted) return
+        setAssignments(nextAssignments)
+      } catch (error) {
+        console.warn(
+          "[ExhibitionSpaceAssignment] Failed to load assignments.",
+          error
+        )
+      } finally {
+        if (mounted) {
+          setIsLoadingAssignments(false)
         }
       }
     }
 
-    return next
-  } catch {
-    return {}
-  }
-}
+    void loadAssignments()
 
-export default function ExhibitionSpaceAssignment() {
-  const exhibitions = useMemo(() => [...EXHIBITIONS], [])
-  const [assignments, setAssignments] = useState<SpaceAssignments>({})
-  const [hydrated, setHydrated] = useState(false)
-
-  useEffect(() => {
-    const stored = readStoredAssignments()
-    setAssignments(stored)
-    setHydrated(true)
+    return () => {
+      mounted = false
+    }
   }, [])
 
-  useEffect(() => {
-    if (!hydrated) return
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(assignments))
-  }, [assignments, hydrated])
+  async function handleChange(slug: string, nextSpaceId: string) {
+    const token = (saveTokensRef.current[slug] ?? 0) + 1
+    saveTokensRef.current[slug] = token
 
-  function handleChange(slug: string, nextSpaceId: string) {
     setAssignments((current) => ({
       ...current,
       [slug]: nextSpaceId,
+    }))
+    setRowStatuses((current) => ({
+      ...current,
+      [slug]: { state: "saving" },
+    }))
+
+    const result = await saveExhibitionSpaceAssignment(slug, nextSpaceId)
+    if (saveTokensRef.current[slug] !== token) return
+
+    if (result === "failed") {
+      setRowStatuses((current) => ({
+        ...current,
+        [slug]: {
+          state: "error",
+          message: "Save failed. Draft fallback may be unavailable.",
+        },
+      }))
+      return
+    }
+
+    setRowStatuses((current) => ({
+      ...current,
+      [slug]: {
+        state: "saved",
+        message: getSaveMessage(result),
+      },
     }))
   }
 
@@ -83,8 +124,13 @@ export default function ExhibitionSpaceAssignment() {
     <div style={panelStyle}>
       <div style={introStyle}>
         <p style={noticeStyle}>
-          This admin draft stores selection overrides in localStorage only.
-          Published exhibition storage will be added in a later Firestore step.
+          Space choices are saved for this admin draft. Firestore sync is used
+          when available, with local fallback.
+        </p>
+        <p style={subNoticeStyle}>
+          {isLoadingAssignments
+            ? "Loading saved assignments..."
+            : "Saved assignments loaded."}
         </p>
       </div>
 
@@ -102,15 +148,18 @@ export default function ExhibitionSpaceAssignment() {
             const selectedSpaceId = getEffectiveSpaceId(exhibition, assignments)
             const defaultSpaceId = exhibition.spaceId ?? DEFAULT_SPACE_ID
             const previewHref = `/exhibitions/${exhibition.slug}/gallery?spaceId=${selectedSpaceId}`
+            const rowStatus = rowStatuses[exhibition.slug]
+            const statusText = getStatusMessage(
+              rowStatus?.state ?? "idle",
+              rowStatus?.message
+            )
 
             return (
               <div key={exhibition.slug} style={rowStyle}>
                 <div style={nameCellStyle}>
                   <strong style={titleStyle}>{exhibition.title}</strong>
                   <span style={subtitleStyle}>
-                    {hydrated && assignments[exhibition.slug]
-                      ? "Local override active"
-                      : "Using exhibition default"}
+                    {statusText || "Using exhibition default"}
                   </span>
                 </div>
 
@@ -123,11 +172,11 @@ export default function ExhibitionSpaceAssignment() {
                     aria-label={`Assign space for ${exhibition.slug}`}
                     value={selectedSpaceId}
                     onChange={(event) =>
-                      handleChange(exhibition.slug, event.target.value)
+                      void handleChange(exhibition.slug, event.target.value)
                     }
                     style={selectStyle}
                   >
-                    {SPACE_TEMPLATES.map((template: SpaceTemplate) => (
+                    {SPACE_TEMPLATES.map((template) => (
                       <option key={template.id} value={template.id}>
                         {template.name}
                       </option>
@@ -156,7 +205,7 @@ const panelStyle: React.CSSProperties = {
 
 const introStyle: React.CSSProperties = {
   display: "grid",
-  gap: 8,
+  gap: 6,
 }
 
 const noticeStyle: React.CSSProperties = {
@@ -164,6 +213,13 @@ const noticeStyle: React.CSSProperties = {
   fontSize: 12,
   lineHeight: 1.6,
   color: "rgba(243,241,236,0.58)",
+}
+
+const subNoticeStyle: React.CSSProperties = {
+  margin: 0,
+  fontSize: 11,
+  lineHeight: 1.5,
+  color: "rgba(243,241,236,0.42)",
 }
 
 const tableWrapStyle: React.CSSProperties = {
@@ -179,7 +235,8 @@ const tableStyle: React.CSSProperties = {
 
 const headerRowStyle: React.CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "minmax(180px, 1.3fr) minmax(140px, 0.9fr) minmax(180px, 1fr) minmax(220px, 1.1fr) minmax(150px, auto)",
+  gridTemplateColumns:
+    "minmax(180px, 1.3fr) minmax(140px, 0.9fr) minmax(180px, 1fr) minmax(220px, 1.1fr) minmax(150px, auto)",
   gap: 12,
   padding: "14px 18px",
   borderBottom: "1px solid rgba(255,255,255,0.08)",
@@ -195,7 +252,8 @@ const headerCellStyle: React.CSSProperties = {
 
 const rowStyle: React.CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "minmax(180px, 1.3fr) minmax(140px, 0.9fr) minmax(180px, 1fr) minmax(220px, 1.1fr) minmax(150px, auto)",
+  gridTemplateColumns:
+    "minmax(180px, 1.3fr) minmax(140px, 0.9fr) minmax(180px, 1fr) minmax(220px, 1.1fr) minmax(150px, auto)",
   gap: 12,
   alignItems: "center",
   padding: "16px 18px",

@@ -108,7 +108,7 @@ const SECTION_META: Record<
   assignments: {
     label: "Assignments",
     title: "Exhibition Space Assignment",
-    desc: "Assign a virtual gallery space to each exhibition for preview. Saved locally for this admin draft only.",
+    desc: "Assign a virtual gallery space to each exhibition for preview. Firestore sync is used when available, with local fallback.",
   },
   spaces: {
     label: "Spaces",
