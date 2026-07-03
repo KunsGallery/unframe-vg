@@ -145,6 +145,7 @@ export type Exhibition = {
   links: InfoWallLink[]
   layoutPreset: InfoWallPresetKey
   spaceId?: string
+  wallColorPresetId?: string
   lighting: ExhibitionLighting
   surfaces: ExhibitionSurfaceSettings
   media: ExhibitionMediaSettings
@@ -268,6 +269,7 @@ export const exhibitions: Exhibition[] = [
     ],
     layoutPreset: "default",
     spaceId: "unframe-skylight-room-v1",
+    wallColorPresetId: "ivory",
     lighting: defaultLightingPreset,
     surfaces: defaultSurfacePreset,
     media: defaultMediaPreset,
@@ -293,6 +295,7 @@ export const exhibitions: Exhibition[] = [
     ],
     layoutPreset: "split",
     spaceId: "unframe-skylight-room-v1",
+    wallColorPresetId: "ivory",
     lighting: {
       ...defaultLightingPreset,
       rectIntensity: 9.2,
@@ -323,6 +326,7 @@ export const exhibitions: Exhibition[] = [
     ],
     layoutPreset: "compact",
     spaceId: "unframe-skylight-room-v1",
+    wallColorPresetId: "ivory",
     lighting: {
       ...defaultLightingPreset,
       rectIntensity: 10.8,

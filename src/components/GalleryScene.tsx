@@ -42,6 +42,11 @@ import { getStaticExhibitionBySlug } from "@/lib/getStaticExhibitionBySlug"
 import { galleryWalls, type GalleryWall } from "@/data/galleryWalls"
 import GalleryWalls from "./GalleryWalls"
 import { SPACE_TEMPLATES } from "@/data/spaceTemplates"
+import {
+  DEFAULT_WALL_COLOR_PRESET_ID,
+  WALL_COLOR_PRESETS,
+  getWallColorPresetById,
+} from "@/data/wallColorPresets"
 
 type FirestoreArtwork = {
   id: string
@@ -259,6 +264,40 @@ function resolveSpaceTemplate(spaceId?: string): {
   return {
     template: defaultTemplate,
     requestedSpaceId: normalizedSpaceId,
+    isFallback: true,
+  }
+}
+
+function resolveWallColorPreset(wallColorPresetId?: string): {
+  preset: (typeof WALL_COLOR_PRESETS)[number]
+  requestedWallColorPresetId?: string
+  isFallback: boolean
+} {
+  const normalizedWallColorPresetId = wallColorPresetId?.trim()
+
+  if (!normalizedWallColorPresetId) {
+    return {
+      preset: getWallColorPresetById(DEFAULT_WALL_COLOR_PRESET_ID),
+      requestedWallColorPresetId: undefined,
+      isFallback: false,
+    }
+  }
+
+  const preset = WALL_COLOR_PRESETS.find(
+    (item) => item.id === normalizedWallColorPresetId
+  )
+
+  if (preset) {
+    return {
+      preset,
+      requestedWallColorPresetId: normalizedWallColorPresetId,
+      isFallback: false,
+    }
+  }
+
+  return {
+    preset: getWallColorPresetById(DEFAULT_WALL_COLOR_PRESET_ID),
+    requestedWallColorPresetId: normalizedWallColorPresetId,
     isFallback: true,
   }
 }
@@ -529,17 +568,20 @@ type GallerySceneProps = {
   exhibitionSlug?: string
   exhibition?: Exhibition | null
   spaceId?: string
+  wallColorPresetId?: string
 }
 
 export default function GalleryScene({
   exhibitionSlug,
   exhibition: exhibitionProp,
   spaceId,
+  wallColorPresetId,
 }: GallerySceneProps = {}) {
   const params = useParams()
   const slugFromParams = typeof params?.slug === "string" ? params.slug : undefined
   const activeSlug = exhibitionSlug ?? slugFromParams
   const warnedSpaceIdRef = useRef<string | null>(null)
+  const warnedWallColorPresetIdRef = useRef<string | null>(null)
 
   const exhibition =
     exhibitionProp ??
@@ -551,6 +593,10 @@ export default function GalleryScene({
     [spaceId]
   )
   const activeSpaceTemplate = resolvedSpace.template
+  const resolvedWallColorPreset = useMemo(
+    () => resolveWallColorPreset(wallColorPresetId),
+    [wallColorPresetId]
+  )
 
   useEffect(() => {
     if (!resolvedSpace.isFallback || !resolvedSpace.requestedSpaceId) return
@@ -561,6 +607,28 @@ export default function GalleryScene({
       `[GalleryScene] Unknown spaceId "${resolvedSpace.requestedSpaceId}". Falling back to "${DEFAULT_SPACE_ID}" (UNFRAME Skylight Room).`
     )
   }, [resolvedSpace.isFallback, resolvedSpace.requestedSpaceId])
+
+  useEffect(() => {
+    if (
+      !resolvedWallColorPreset.isFallback ||
+      !resolvedWallColorPreset.requestedWallColorPresetId
+    )
+      return
+    if (
+      warnedWallColorPresetIdRef.current ===
+      resolvedWallColorPreset.requestedWallColorPresetId
+    )
+      return
+
+    warnedWallColorPresetIdRef.current =
+      resolvedWallColorPreset.requestedWallColorPresetId
+    console.warn(
+      `[GalleryScene] Unknown wallColorPresetId "${resolvedWallColorPreset.requestedWallColorPresetId}". Falling back to "${DEFAULT_WALL_COLOR_PRESET_ID}" (Ivory).`
+    )
+  }, [
+    resolvedWallColorPreset.isFallback,
+    resolvedWallColorPreset.requestedWallColorPresetId,
+  ])
 
   const [lighting, setLighting] = useState<ExhibitionLighting>(exhibition.lighting)
 
@@ -688,6 +756,7 @@ export default function GalleryScene({
           <GalleryModel
             exhibitionSlug={exhibitionSlugForChildren}
             modelPath={activeSpaceTemplate.modelPath}
+            wallColorHex={resolvedWallColorPreset.preset.hex}
           />
           <GalleryWalls />
 

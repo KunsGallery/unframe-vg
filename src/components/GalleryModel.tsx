@@ -172,9 +172,11 @@ function createInvisibleBoxColliderFromMesh(mesh: THREE.Mesh) {
 export default function GalleryModel({
   exhibitionSlug,
   modelPath,
+  wallColorHex,
 }: {
   exhibitionSlug?: string
   modelPath?: string
+  wallColorHex?: string
 } = {}) {
   const resolvedModelPath = modelPath?.trim() || DEFAULT_MODEL_PATH
   const gltf = useGLTF(resolvedModelPath)
@@ -199,6 +201,11 @@ export default function GalleryModel({
     if (typeof window === "undefined") return null
     return createCylinderPlaceholderTexture()
   }, [])
+
+  const wallMaterialColor = useMemo(
+    () => new THREE.Color(wallColorHex ?? surfaces.wallColor),
+    [surfaces.wallColor, wallColorHex]
+  )
 
   useEffect(() => {
     if (!exhibition?.slug) return
@@ -354,6 +361,34 @@ export default function GalleryModel({
   const model = useMemo(() => {
     const scene = gltf.scene.clone(true)
     const videoTexture = videoTextureRef.current
+    const wallColorMaterial = wallMaterialColor.clone()
+
+    function isWallMeshCandidate(meshName: string, materialName?: string) {
+      const normalizedMeshName = meshName.toLowerCase()
+      const normalizedMaterialName = materialName?.toLowerCase() ?? ""
+
+      if (
+        normalizedMeshName === "floor" ||
+        normalizedMeshName === "flooredge" ||
+        normalizedMeshName === "cylinderedge" ||
+        normalizedMeshName === "posterwalledge" ||
+        normalizedMeshName === "roof" ||
+        normalizedMeshName === "windowsframe" ||
+        normalizedMeshName === "layer" ||
+        normalizedMeshName === "cylinderwall"
+      ) {
+        return false
+      }
+
+      return (
+        normalizedMeshName === "walls" ||
+        normalizedMeshName === "posterwall" ||
+        normalizedMeshName.startsWith("curvewall_") ||
+        normalizedMeshName.includes("wall") ||
+        normalizedMaterialName.includes("wall") ||
+        meshName in CURVE_WALL_DEBUG_COLORS
+      )
+    }
 
     scene.traverse((child) => {
       if (!(child instanceof THREE.Mesh)) return
@@ -366,6 +401,10 @@ export default function GalleryModel({
       const originalMaterial = Array.isArray(child.material)
         ? child.material[0]
         : child.material
+      const materialName =
+        originalMaterial && "name" in originalMaterial
+          ? originalMaterial.name
+          : undefined
 
       const baseColor =
         originalMaterial && "color" in originalMaterial
@@ -435,11 +474,11 @@ export default function GalleryModel({
         return
       }
 
-      if (meshName in CURVE_WALL_DEBUG_COLORS) {
+      if (isWallMeshCandidate(meshName, materialName)) {
         child.material = new THREE.MeshStandardMaterial({
-          color: new THREE.Color("#d9d3ca"),
-          roughness: 0.96,
-          metalness: 0.01,
+          color: wallColorMaterial,
+          roughness: surfaces.wallRoughness,
+          metalness: surfaces.wallMetalness,
         })
         return
       }
@@ -575,7 +614,7 @@ export default function GalleryModel({
     scene.add(doorGroup)
 
     return scene
-  }, [gltf.scene, surfaces, videoReady, placeholderTexture])
+  }, [gltf.scene, surfaces, videoReady, placeholderTexture, wallMaterialColor])
 
   return <primitive object={model} />
 }

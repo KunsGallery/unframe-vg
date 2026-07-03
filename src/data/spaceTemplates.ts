@@ -20,7 +20,7 @@ export const SPACE_TEMPLATES: SpaceTemplate[] = [
     modelPath: "/models/unframe_skylight_room_v1.glb",
     defaultLighting: "day",
     lightingPresets: ["day", "night"],
-    wallColorPresets: ["ivory", "white", "warm-gray", "deep-blue"],
+    wallColorPresets: ["ivory", "soft-white", "warm-gray", "deep-blue"],
     maxArtworks: 40,
   },
 ]

@@ -6,6 +6,7 @@ import {
   defaultSurfacePreset,
   type Exhibition,
 } from "@/data/exhibitions"
+import { DEFAULT_WALL_COLOR_PRESET_ID } from "@/data/wallColorPresets"
 
 const DEFAULT_SPACE_ID = "unframe-skylight-room-v1"
 
@@ -24,6 +25,7 @@ function createFallbackExhibition(slug: string): Exhibition {
     links: [],
     layoutPreset: "default",
     spaceId: DEFAULT_SPACE_ID,
+    wallColorPresetId: DEFAULT_WALL_COLOR_PRESET_ID,
     lighting: defaultLightingPreset,
     surfaces: defaultSurfacePreset,
     media: defaultMediaPreset,
@@ -45,7 +47,12 @@ export default async function ExhibitionGalleryPage({
   const { slug } = await params
   const resolvedSearchParams = await searchParams
   const spaceIdValue = resolvedSearchParams.spaceId
+  const wallColorValue =
+    resolvedSearchParams.wallColor ?? resolvedSearchParams.wallColorPresetId
   const querySpaceId = Array.isArray(spaceIdValue) ? spaceIdValue[0] : spaceIdValue
+  const queryWallColorPresetId = Array.isArray(wallColorValue)
+    ? wallColorValue[0]
+    : wallColorValue
   const staticExhibition = getStaticExhibitionBySlug(slug)
   const exhibition = staticExhibition ?? createFallbackExhibition(slug)
 
@@ -62,6 +69,10 @@ export default async function ExhibitionGalleryPage({
         exhibition={exhibition}
         querySpaceId={querySpaceId}
         fallbackSpaceId={exhibition.spaceId || DEFAULT_SPACE_ID}
+        queryWallColorPresetId={queryWallColorPresetId}
+        fallbackWallColorPresetId={
+          exhibition.wallColorPresetId || DEFAULT_WALL_COLOR_PRESET_ID
+        }
       />
     </div>
   )

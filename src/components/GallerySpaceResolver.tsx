@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react"
 import GalleryScene from "@/components/GalleryScene"
 import {
-  getExhibitionSpaceAssignments,
-  type ExhibitionSpaceAssignmentMap,
+  getExhibitionPresentationAssignments,
+  type ExhibitionPresentationAssignmentMap,
 } from "@/lib/exhibitionSpaceAssignments"
 import type { Exhibition } from "@/data/exhibitions"
+import { DEFAULT_WALL_COLOR_PRESET_ID } from "@/data/wallColorPresets"
 
 const DEFAULT_SPACE_ID = "unframe-skylight-room-v1"
 
@@ -14,57 +15,81 @@ type Props = {
   slug: string
   exhibition: Exhibition
   querySpaceId?: string
+  queryWallColorPresetId?: string
   fallbackSpaceId: string
+  fallbackWallColorPresetId: string
 }
 
-function normalizeSpaceId(spaceId?: string) {
-  const trimmed = spaceId?.trim()
+function normalizeValue(value?: string) {
+  const trimmed = value?.trim()
   return trimmed || undefined
 }
 
-function resolveAssignedSpaceId(
+function resolveAssignment(
   slug: string,
-  assignments: ExhibitionSpaceAssignmentMap
+  assignments: ExhibitionPresentationAssignmentMap
 ) {
-  const assignedSpaceId = assignments[slug]?.trim()
-  return assignedSpaceId || undefined
+  return assignments[slug]
 }
 
 export default function GallerySpaceResolver({
   slug,
   exhibition,
   querySpaceId,
+  queryWallColorPresetId,
   fallbackSpaceId,
+  fallbackWallColorPresetId,
 }: Props) {
-  const normalizedQuerySpaceId = normalizeSpaceId(querySpaceId)
+  const normalizedQuerySpaceId = normalizeValue(querySpaceId)
+  const normalizedQueryWallColorPresetId = normalizeValue(queryWallColorPresetId)
   const normalizedFallbackSpaceId =
-    normalizeSpaceId(fallbackSpaceId) ?? DEFAULT_SPACE_ID
+    normalizeValue(fallbackSpaceId) ?? DEFAULT_SPACE_ID
+  const normalizedFallbackWallColorPresetId =
+    normalizeValue(fallbackWallColorPresetId) ??
+    DEFAULT_WALL_COLOR_PRESET_ID
 
   const [resolvedSpaceId, setResolvedSpaceId] = useState(
     normalizedQuerySpaceId ?? normalizedFallbackSpaceId
   )
+  const [resolvedWallColorPresetId, setResolvedWallColorPresetId] = useState(
+    normalizedQueryWallColorPresetId ?? normalizedFallbackWallColorPresetId
+  )
 
   useEffect(() => {
     setResolvedSpaceId(normalizedQuerySpaceId ?? normalizedFallbackSpaceId)
-  }, [normalizedQuerySpaceId, normalizedFallbackSpaceId, slug])
+    setResolvedWallColorPresetId(
+      normalizedQueryWallColorPresetId ?? normalizedFallbackWallColorPresetId
+    )
+  }, [
+    normalizedQuerySpaceId,
+    normalizedQueryWallColorPresetId,
+    normalizedFallbackSpaceId,
+    normalizedFallbackWallColorPresetId,
+    slug,
+  ])
 
   useEffect(() => {
-    if (normalizedQuerySpaceId) return
+    if (normalizedQuerySpaceId && normalizedQueryWallColorPresetId) return
 
     let active = true
 
     async function loadAssignments() {
       try {
-        const assignments = await getExhibitionSpaceAssignments()
+        const assignments = await getExhibitionPresentationAssignments()
         if (!active) return
 
-        const savedSpaceId = resolveAssignedSpaceId(slug, assignments)
-        if (savedSpaceId) {
-          setResolvedSpaceId(savedSpaceId)
+        const savedAssignment = resolveAssignment(slug, assignments)
+
+        if (!normalizedQuerySpaceId && savedAssignment?.spaceId) {
+          setResolvedSpaceId(savedAssignment.spaceId)
+        }
+
+        if (!normalizedQueryWallColorPresetId && savedAssignment?.wallColorPresetId) {
+          setResolvedWallColorPresetId(savedAssignment.wallColorPresetId)
         }
       } catch (error) {
         console.warn(
-          "[GallerySpaceResolver] Failed to resolve saved exhibition space assignment.",
+          "[GallerySpaceResolver] Failed to resolve saved exhibition presentation assignment.",
           error
         )
       }
@@ -75,13 +100,14 @@ export default function GallerySpaceResolver({
     return () => {
       active = false
     }
-  }, [slug, normalizedQuerySpaceId])
+  }, [slug, normalizedQuerySpaceId, normalizedQueryWallColorPresetId])
 
   return (
     <GalleryScene
       exhibitionSlug={slug}
       exhibition={exhibition}
       spaceId={resolvedSpaceId}
+      wallColorPresetId={resolvedWallColorPresetId}
     />
   )
 }
