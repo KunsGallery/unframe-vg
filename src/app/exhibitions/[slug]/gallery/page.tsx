@@ -1,6 +1,37 @@
-import { notFound } from "next/navigation"
 import GalleryScene from "@/components/GalleryScene"
-import { getPublicExhibitionBySlug } from "@/lib/getExhibitions"
+import { getStaticExhibitionBySlug } from "@/lib/getStaticExhibitionBySlug"
+import {
+  defaultLightingPreset,
+  defaultMediaPreset,
+  defaultSurfacePreset,
+  type Exhibition,
+} from "@/data/exhibitions"
+
+const DEFAULT_SPACE_ID = "unframe-skylight-room-v1"
+
+function createFallbackExhibition(slug: string): Exhibition {
+  const normalizedSlug = slug.trim()
+
+  return {
+    slug: normalizedSlug || slug,
+    title: normalizedSlug || "Untitled Exhibition",
+    artist: "",
+    period: "",
+    description: "",
+    summary: "",
+    rightTitle: "",
+    rightBody: "",
+    links: [],
+    layoutPreset: "default",
+    spaceId: DEFAULT_SPACE_ID,
+    lighting: defaultLightingPreset,
+    surfaces: defaultSurfacePreset,
+    media: defaultMediaPreset,
+    isCurrent: false,
+    isRecommended: false,
+    coverImage: "",
+  }
+}
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -13,12 +44,17 @@ export default async function ExhibitionGalleryPage({
 }: Props) {
   const { slug } = await params
   const resolvedSearchParams = await searchParams
-  const exhibition = await getPublicExhibitionBySlug(slug)
   const spaceIdValue = resolvedSearchParams.spaceId
-  const spaceId = Array.isArray(spaceIdValue) ? spaceIdValue[0] : spaceIdValue
+  const previewSpaceId = Array.isArray(spaceIdValue) ? spaceIdValue[0] : spaceIdValue
+  const staticExhibition = getStaticExhibitionBySlug(slug)
+  const exhibition = staticExhibition ?? createFallbackExhibition(slug)
+  const spaceId =
+    previewSpaceId?.trim() || exhibition.spaceId || DEFAULT_SPACE_ID
 
-  if (!exhibition) {
-    notFound()
+  if (!staticExhibition) {
+    console.warn(
+      `[GalleryPage] Unknown exhibition slug "${slug}". Using fallback exhibition data.`
+    )
   }
 
   return (

@@ -144,6 +144,7 @@ export type Exhibition = {
   rightBody?: string
   links: InfoWallLink[]
   layoutPreset: InfoWallPresetKey
+  spaceId?: string
   lighting: ExhibitionLighting
   surfaces: ExhibitionSurfaceSettings
   media: ExhibitionMediaSettings
@@ -266,6 +267,7 @@ export const exhibitions: Exhibition[] = [
       { id: "website", label: "Website", url: "https://example.com" },
     ],
     layoutPreset: "default",
+    spaceId: "unframe-skylight-room-v1",
     lighting: defaultLightingPreset,
     surfaces: defaultSurfacePreset,
     media: defaultMediaPreset,
@@ -290,6 +292,7 @@ export const exhibitions: Exhibition[] = [
       { id: "website", label: "Website", url: "https://example.com" },
     ],
     layoutPreset: "split",
+    spaceId: "unframe-skylight-room-v1",
     lighting: {
       ...defaultLightingPreset,
       rectIntensity: 9.2,
@@ -319,6 +322,7 @@ export const exhibitions: Exhibition[] = [
       { id: "press", label: "Press", url: "https://example.com/press" },
     ],
     layoutPreset: "compact",
+    spaceId: "unframe-skylight-room-v1",
     lighting: {
       ...defaultLightingPreset,
       rectIntensity: 10.8,
