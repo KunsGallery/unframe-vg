@@ -504,7 +504,7 @@ export default function AdminPage() {
         <aside style={sidebarStyle}>
           <div style={brandBlockStyle}>
             <p style={eyebrowStyle}>Virtual Exhibition Admin</p>
-            <h1 style={brandTitleStyle}>Kün’s Console</h1>
+            <h1 style={brandTitleStyle}>UNFRAME Console</h1>
             <p style={brandDescStyle}>
               전시 운영, 설치, 조명, 미디어, 카메라를 한 화면에서 관리합니다.
             </p>
