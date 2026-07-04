@@ -12,6 +12,19 @@ export const mobileLook = { x: 0, y: 0 }
 
 const PLAYER_RADIUS = 0.24
 const PLAYER_HEIGHT = 1.6
+const POINTER_LOCK_WARNING_THROTTLE_MS = 2000
+
+function getPointerLockErrorKey(error: unknown) {
+  if (error instanceof DOMException) {
+    return `${error.name}:${error.message}`
+  }
+
+  if (error instanceof Error) {
+    return `${error.name}:${error.message}`
+  }
+
+  return String(error)
+}
 
 function collidesAt(position: THREE.Vector3) {
   const playerMinX = position.x - PLAYER_RADIUS
@@ -37,7 +50,14 @@ export default function PlayerControls() {
   const controls = useRef<PointerLockControlsImpl | null>(null)
   const keys = useRef<{ [key: string]: boolean }>({})
   const selected = useArtworkStore((state) => state.selected)
+  const interactionSuppressed = useArtworkStore(
+    (state) => state.interactionSuppressed
+  )
   const { camera, gl } = useThree()
+  const lastPointerLockWarningRef = useRef<{
+    key: string
+    at: number
+  } | null>(null)
 
   const isTouchDevice = useMemo(() => {
     if (typeof window === "undefined") return false
@@ -50,22 +70,39 @@ export default function PlayerControls() {
 
   const yawRef = useRef(0)
   const pitchRef = useRef(0)
-  const requestPointerLockSafely = useCallback(() => {
+  const reportPointerLockFailure = useCallback((error: unknown) => {
+    const key = getPointerLockErrorKey(error)
+    const now = Date.now()
+    const last = lastPointerLockWarningRef.current
+
+    if (last && last.key === key && now - last.at < POINTER_LOCK_WARNING_THROTTLE_MS) {
+      return
+    }
+
+    lastPointerLockWarningRef.current = { key, at: now }
+    console.warn("[PlayerControls] Pointer lock request failed.", error)
+  }, [])
+
+  const requestPointerLockSafely = useCallback((event?: Event) => {
     const controlsInstance = controls.current
     const element = gl.domElement
 
+    if (!event?.isTrusted) return
     if (!controlsInstance || !element) return
-    if (document.pointerLockElement === element) return
+    if (selected || interactionSuppressed) return
+    if (typeof document === "undefined") return
+    if (typeof element.requestPointerLock !== "function") return
+    if (!element.isConnected) return
     if (element.ownerDocument !== document) return
+    if (!document.hasFocus()) return
+    if (document.pointerLockElement === element) return
 
     try {
       controlsInstance.lock()
     } catch (error) {
-      if (process.env.NODE_ENV !== "production") {
-        console.warn("PointerLock request failed", error)
-      }
+      reportPointerLockFailure(error)
     }
-  }, [gl.domElement])
+  }, [gl.domElement, interactionSuppressed, reportPointerLockFailure, selected])
 
   useEffect(() => {
     camera.rotation.order = "YXZ"
@@ -90,27 +127,50 @@ export default function PlayerControls() {
   useEffect(() => {
     if (selected) return
 
-    const controlsInstance = new PointerLockControlsImpl(camera, gl.domElement)
-    controls.current = controlsInstance
+    let controlsInstance: PointerLockControlsImpl | null = null
 
-    controlsInstance.connect(gl.domElement)
-
-    const handlePointerDown = () => {
-      requestPointerLockSafely()
+    try {
+      controlsInstance = new PointerLockControlsImpl(camera, gl.domElement)
+      controls.current = controlsInstance
+      controlsInstance.connect(gl.domElement)
+    } catch (error) {
+      controls.current = null
+      reportPointerLockFailure(error)
+      return
     }
 
-    window.addEventListener("gallery:pointer-missed", handlePointerDown)
+    const handleCanvasPointerDown = (event: PointerEvent) => {
+      if (!event.isTrusted || event.button !== 0) return
+      requestPointerLockSafely(event)
+    }
+
+    gl.domElement.addEventListener("pointerdown", handleCanvasPointerDown)
 
     return () => {
-      window.removeEventListener("gallery:pointer-missed", handlePointerDown)
-      if (document.pointerLockElement === gl.domElement) {
-        controlsInstance.unlock()
+      gl.domElement.removeEventListener("pointerdown", handleCanvasPointerDown)
+
+      try {
+        if (
+          typeof document !== "undefined" &&
+          document.pointerLockElement === gl.domElement
+        ) {
+          controlsInstance?.unlock()
+        }
+      } catch (error) {
+        reportPointerLockFailure(error)
       }
-      controlsInstance.disconnect()
-      controlsInstance.dispose()
+
+      controlsInstance?.disconnect()
+      controlsInstance?.dispose()
       controls.current = null
     }
-  }, [camera, gl.domElement, requestPointerLockSafely, selected])
+  }, [
+    camera,
+    gl.domElement,
+    reportPointerLockFailure,
+    requestPointerLockSafely,
+    selected,
+  ])
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
